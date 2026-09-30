@@ -29,9 +29,9 @@ public class JSON {
 			
 			switch(entry.getValue()) {
 				case String s -> serialized += '"' + s + '"';
-				case Integer i -> serialized += '"' + i.toString() + '"';
-				case Double d -> serialized += '"' + d.toString() + '"';
-				case Boolean b -> serialized += "" + b;
+				case Integer i -> serialized += i.toString();
+				case Double d -> serialized += d.toString();
+				case Boolean b -> serialized += b.toString();
 				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
 				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";
@@ -92,7 +92,7 @@ public class JSON {
 	 * @param multiline
 	 * @param indentation
 	 * @param level
-	 * @return partial JSON String
+	 * @return Partial JSON String
 	 */
 	private static String serialize(ArrayList<Object> array, boolean multiline, int indentation, int level) {
 		String serialized = "[";
@@ -103,9 +103,9 @@ public class JSON {
 
 			switch(item) {
 				case String s -> serialized += '"' + s + '"';
-				case Integer i -> serialized += '"' + i.toString() + '"';
-				case Double d -> serialized += '"' + d.toString() + '"';
-				case Boolean b -> serialized += "" + b;
+				case Integer i -> serialized += i.toString() + '"';
+				case Double d -> serialized += d.toString();
+				case Boolean b -> serialized += b.toString();
 				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
 				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";

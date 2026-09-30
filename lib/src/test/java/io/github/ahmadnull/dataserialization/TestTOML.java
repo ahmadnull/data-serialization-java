@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class TestJSON {
+class TestTOML {
     @Test void testJSONFormat() {
-    	String raw = "{}";
-    	HashMap<String, Object> data = JSON.deserialize(raw);
+    	String raw = "";
+    	HashMap<String, Object> data = TOML.deserialize(raw);
     	data.put("name", "Leibniz");
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
@@ -27,11 +27,21 @@ class TestJSON {
     	
     	data.put("nested_array", nestedArray);
     	    	
-    	String serialized = JSON.serialize(data, false);
+    	String serialized = TOML.serialize(data);
     	
     	System.out.println(serialized);
     	
-    	String expected = "{\"is_alive\": false, \"name\": \"Leibniz\", \"nested_data\": {\"key1\": \"value1\", \"key2\": \"value2\"}, \"birth_year\": 1646, \"nested_array\": [\"item1\", \"item2\"]}";
+    	String expected = 
+    	  "is_alive = false\n"
+    	+ "name = \"Leibniz\"\n"
+    	+ "\n"
+    	+ "[nested_data]\n"
+    	+ "key1 = \"value1\"\n"
+    	+ "key2 = \"value2\"\n"
+    	+ "\n"
+    	+ "birth_year = 1646\n"
+    	+ "nested_array = [ \"item1\", \"item2\" ]"
+    	+ "\n";
     	
     	assertEquals(expected, serialized);
     }
