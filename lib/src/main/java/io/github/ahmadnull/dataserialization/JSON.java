@@ -1,5 +1,6 @@
 package io.github.ahmadnull.dataserialization;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class JSON {
@@ -17,21 +18,23 @@ public class JSON {
 	 * @return JSON String
 	 */
 	public static String serialize(HashMap<String, Object> data, boolean multiline, int indentation, int level) {
-		String serialized = Utils.repeatSpace(indentation * (level - 1)) + "{";
+		String serialized = "{";
 
 		for (HashMap.Entry<String, Object> entry : data.entrySet()) {
 			if (multiline) 
 				serialized += '\n' + Utils.repeatSpace(indentation * level);
 			
-			serialized += '"' + entry.getKey().toString() + '"' + ':';
+			serialized += '"' + entry.getKey().toString() + '"' + ':' + ' ';
 			
 			switch(entry.getValue()) {
-			case String s -> serialized += '"' + s + '"';
-			case Integer i -> serialized += '"' + i.toString() + '"';
-			case Double d -> serialized += '"' + d.toString() + '"';
-			case Boolean b -> serialized += "" + b;
-			case null -> serialized += "null";
-			default -> System.out.println("Invalid value");
+				case String s -> serialized += '"' + s + '"';
+				case Integer i -> serialized += '"' + i.toString() + '"';
+				case Double d -> serialized += '"' + d.toString() + '"';
+				case Boolean b -> serialized += "" + b;
+				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
+				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
+				case null -> serialized += "null";
+				default -> System.out.println("Invalid value");
 			}
 			
 			serialized += ',';
@@ -41,14 +44,13 @@ public class JSON {
 		}
 		
 		// Remove the trailing comma ','
-		serialized = serialized.substring(0, serialized.length() - 1);
+		int trailing = multiline ? 1 : 2;
+		serialized = serialized.substring(0, serialized.length() - trailing);
 		
 		if (multiline)
-			serialized += '\n';
+			serialized += '\n' + Utils.repeatSpace(indentation * (level - 1));
 		
-		serialized += Utils.repeatSpace(indentation * (level - 1));
-		
-			serialized += '}';
+		serialized += '}';
 		
 		return serialized;
 	}
@@ -65,7 +67,44 @@ public class JSON {
 		return serialize(data, multilineDefault, indentationDefault, levelDefault);
 	}
 	
+	private static String serialize(ArrayList<Object> array, boolean multiline, int indentation, int level) {
+		String serialized = "[";
+		
+		for (Object item : array) {
+			if (multiline) 
+				serialized += '\n' + Utils.repeatSpace(indentation * level);
+
+			switch(item) {
+				case String s -> serialized += '"' + s + '"';
+				case Integer i -> serialized += '"' + i.toString() + '"';
+				case Double d -> serialized += '"' + d.toString() + '"';
+				case Boolean b -> serialized += "" + b;
+				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
+				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
+				case null -> serialized += "null";
+				default -> System.out.println("Invalid value");
+			}
+			
+			serialized += ',';
+			
+			if (!multiline)
+				serialized += ' ';
+		}
+		
+		// Remove the trailing comma ','
+		int trailing = multiline ? 1 : 2;
+		serialized = serialized.substring(0, serialized.length() - trailing);
+		
+		if (multiline)
+			serialized += '\n' + Utils.repeatSpace(indentation * (level - 1));
+		
+		serialized += ']';
+		
+		return serialized;
+	}
+	
 	public static HashMap<String, Object> deserialize(String raw) {
+		// TODO
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		return data;
 	}
