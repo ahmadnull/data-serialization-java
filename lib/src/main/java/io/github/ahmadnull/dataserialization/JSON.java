@@ -5,12 +5,13 @@ import java.util.HashMap;
 
 public class JSON {
 	
+	// Default Values
 	static boolean multilineDefault = true;
 	static int indentationDefault = 4;
 	static int levelDefault = 1;
 	
 	/**
-	 * Serialize HashMap<String, Object> into JSON String
+	 * Serialize HashMap&lt;String, Object&gt; into JSON String
 	 * @param data
 	 * @param multiline
 	 * @param indentation
@@ -55,18 +56,44 @@ public class JSON {
 		return serialized;
 	}
 	
+	/**
+	 * Serialize HashMap&lt;String, Object&gt; into JSON String
+	 * @param data
+	 * @param multiline
+	 * @param indentation
+	 * @return JSON String
+	 */
 	public static String serialize(HashMap<String, Object> data, boolean multiline, int indentation) {
 		return serialize(data, multiline, indentation, levelDefault);
 	}
 	
+	/**
+	 * Serialize HashMap&lt;String, Object&gt; into JSON String
+	 * @param data
+	 * @param multiline
+	 * @return JSON String
+	 */
 	public static String serialize(HashMap<String, Object> data, boolean multiline) {
 		return serialize(data, multiline, indentationDefault, levelDefault);
 	}
 	
+	/**
+	 * Serialize HashMap&lt;String, Object&gt; into JSON String
+	 * @param data
+	 * @return JSON String
+	 */
 	public static String serialize(HashMap<String, Object> data) {
 		return serialize(data, multilineDefault, indentationDefault, levelDefault);
 	}
 	
+	/**
+	 * Serialize ArrayList&lt;Object&gt; into partial JSON String (Not intended for public use)
+	 * @param array
+	 * @param multiline
+	 * @param indentation
+	 * @param level
+	 * @return partial JSON String
+	 */
 	private static String serialize(ArrayList<Object> array, boolean multiline, int indentation, int level) {
 		String serialized = "[";
 		
@@ -103,6 +130,12 @@ public class JSON {
 		return serialized;
 	}
 	
+	/**
+	 * Deserialize raw JSON String into HashMap&lt;String, Object&gt;
+	 * @param raw
+	 * @return HashMap&lt;String, Object&gt;
+	 * @implNote TODO
+	 */
 	public static HashMap<String, Object> deserialize(String raw) {
 		// TODO
 		HashMap<String, Object> data = new HashMap<String, Object>();
