@@ -5,32 +5,34 @@ import java.util.HashMap;
 public enum Format {
 	JSON {
 		public String serialize(HashMap<Object, Object> data) {
-			return JSON.serialize(data);
+			return JSONUtil.serialize(data);
 		}
 		
 		public HashMap<Object, Object> deserialize(String raw) {
-			return JSON.deserialize(raw);
+			return JSONUtil.deserialize(raw);
 		}
 	},
+
 	TOML {
 		public String serialize(HashMap<Object, Object> data) {
-			return TOML.serialize(data);
+			return TOMLUtil.serialize(data);
 		}
 		
 		public HashMap<Object, Object> deserialize(String raw) {
-			return TOML.deserialize(raw);
+			return TOMLUtil.deserialize(raw);
 		}
 	},
+
 	XML {
 		public String serialize(HashMap<Object, Object> data) {
-			return XML.serialize(data);
+			return TOMLUtil.serialize(data);
 		}
 		
 		public HashMap<Object, Object> deserialize(String raw) {
-			return XML.deserialize(raw);
+			return TOMLUtil.deserialize(raw);
 		}
 	};
 	
-	abstract String serialize(HashMap<Object, Object> data);
-	abstract HashMap<Object, Object> deserialize(String raw);
+	abstract public String serialize(HashMap<Object, Object> data);
+	abstract public HashMap<Object, Object> deserialize(String raw);
 }

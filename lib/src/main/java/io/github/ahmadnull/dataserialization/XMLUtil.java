@@ -2,7 +2,7 @@ package io.github.ahmadnull.dataserialization;
 
 import java.util.HashMap;
 
-class JSON {
+class XMLUtil {
 	static String serialize(HashMap<Object, Object> data) {
 		return "";
 	}

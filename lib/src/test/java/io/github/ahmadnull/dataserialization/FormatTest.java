@@ -12,6 +12,6 @@ class FormatTest {
     	HashMap<Object, Object> data = Format.JSON.deserialize(raw);
     	String serialized = Format.JSON.serialize(data);
     	
-    	assertEquals(serialized, "");
+    	assertEquals("", serialized);
     }
 }
