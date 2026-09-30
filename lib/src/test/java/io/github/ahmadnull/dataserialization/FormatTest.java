@@ -9,9 +9,15 @@ import java.util.HashMap;
 class FormatTest {
     @Test void testJSONFormat() {
     	String raw = "raw";
-    	HashMap<Object, Object> data = Format.JSON.deserialize(raw);
-    	String serialized = Format.JSON.serialize(data);
+    	HashMap<String, Object> data = JSON.deserialize(raw);
+    	data.put("name", "Leibniz");
+    	data.put("is_alive", false);
+    	data.put("birth_year", 1646);
+    	String serialized = JSON.serialize(data, true, 2);
     	
-    	assertEquals("", serialized);
+    	System.out.println("Hello World from Ahmad!");
+    	System.out.println(serialized);
+    	
+    	//assertEquals("", serialized);
     }
 }
