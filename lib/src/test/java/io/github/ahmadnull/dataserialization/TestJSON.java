@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class FormatTest {
+class TestJSON {
     @Test void testJSONFormat() {
     	String raw = "{}";
     	HashMap<String, Object> data = JSON.deserialize(raw);
