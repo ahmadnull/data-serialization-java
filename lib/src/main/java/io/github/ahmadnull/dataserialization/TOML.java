@@ -1,7 +1,8 @@
 package io.github.ahmadnull.dataserialization;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class TOML {
 	
@@ -10,17 +11,17 @@ public class TOML {
 	 * @param data
 	 * @return TOML String
 	 */
-	public static String serialize(HashMap<String, Object> data) {
+	public static String serialize(Map<String, Object> data) {
 		String serialized = "";
 		
-		for (HashMap.Entry<String, Object> entry : data.entrySet()) {
+		for (Map.Entry<String, Object> entry : data.entrySet()) {
 			switch(entry.getValue()) {
 				case String s -> serialized += entry.getKey() + " = " + '"' + s + '"';
 				case Integer i -> serialized += entry.getKey() + " = " + i.toString();
 				case Double d -> serialized += entry.getKey() + " = " + d.toString();
 				case Boolean b -> serialized += entry.getKey() + " = " + b.toString();
-				case HashMap h -> serialized += "\n[" + entry.getKey() + ']' + '\n' + serialize(h);
-				case ArrayList a -> serialized += entry.getKey() + " = "  + serialize(a);
+				case Map h -> serialized += "\n[" + entry.getKey() + ']' + '\n' + serialize(h);
+				case List a -> serialized += entry.getKey() + " = "  + serialize(a);
 				case null -> serialized += "null";
 				default -> System.out.println("Invalid value");
 			}
@@ -36,7 +37,7 @@ public class TOML {
 	 * @param array
 	 * @return Partial TOML String
 	 */
-	private static String serialize(ArrayList<Object> array) {
+	private static String serialize(List<Object> array) {
 		String serialized = "[ ";
 		
 		for (Object item : array) {
@@ -46,7 +47,7 @@ public class TOML {
 				case Double d -> serialized += d.toString();
 				case Boolean b -> serialized += "" + b;
 				//case HashMap h -> serialized += serialize(h);
-				case ArrayList a -> serialized += serialize(a);
+				case List a -> serialized += serialize(a);
 				case null -> serialized += "null";
 				default -> System.out.println("Invalid value");
 			}
@@ -64,14 +65,15 @@ public class TOML {
 	}
 	
 	/**
-	 * Deserialize raw TOML String into HashMap&lt;String, Object&gt;
+	 * Deserialize raw TOML String into Map&lt;String, Object&gt;
+	 * @param <T>
 	 * @param raw
-	 * @return HashMap&lt;String, Object&gt;
-	 * @implNote TODO
+	 * @param mapFactory
+	 * @return Map&lt;String, Object&gt;
 	 */
-	public static HashMap<String, Object> deserialize(String raw) {
+	public static <T extends Map<String, Object>> T deserialize(String raw, Supplier<T> mapFactory) {
 		// TODO
-		HashMap<String, Object> data = new HashMap<String, Object>();
+		T data = mapFactory.get();
 		return data;
 	}
 }

@@ -1,7 +1,8 @@
 package io.github.ahmadnull.dataserialization;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class JSON {
 	
@@ -18,10 +19,10 @@ public class JSON {
 	 * @param level
 	 * @return JSON String
 	 */
-	public static String serialize(HashMap<String, Object> data, boolean multiline, int indentation, int level) {
+	public static String serialize(Map<String, Object> data, boolean multiline, int indentation, int level) {
 		String serialized = "{";
 
-		for (HashMap.Entry<String, Object> entry : data.entrySet()) {
+		for (Map.Entry<String, Object> entry : data.entrySet()) {
 			if (multiline) 
 				serialized += '\n' + Utils.repeatSpace(indentation * level);
 			
@@ -32,8 +33,8 @@ public class JSON {
 				case Integer i -> serialized += i.toString();
 				case Double d -> serialized += d.toString();
 				case Boolean b -> serialized += b.toString();
-				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
-				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
+				case Map h -> serialized += serialize(h, multiline, indentation, level + 1);
+				case List a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";
 				default -> System.out.println("Invalid value");
 			}
@@ -63,7 +64,7 @@ public class JSON {
 	 * @param indentation
 	 * @return JSON String
 	 */
-	public static String serialize(HashMap<String, Object> data, boolean multiline, int indentation) {
+	public static String serialize(Map<String, Object> data, boolean multiline, int indentation) {
 		return serialize(data, multiline, indentation, levelDefault);
 	}
 	
@@ -73,7 +74,7 @@ public class JSON {
 	 * @param multiline
 	 * @return JSON String
 	 */
-	public static String serialize(HashMap<String, Object> data, boolean multiline) {
+	public static String serialize(Map<String, Object> data, boolean multiline) {
 		return serialize(data, multiline, indentationDefault, levelDefault);
 	}
 	
@@ -82,7 +83,7 @@ public class JSON {
 	 * @param data
 	 * @return JSON String
 	 */
-	public static String serialize(HashMap<String, Object> data) {
+	public static String serialize(Map<String, Object> data) {
 		return serialize(data, multilineDefault, indentationDefault, levelDefault);
 	}
 	
@@ -94,7 +95,7 @@ public class JSON {
 	 * @param level
 	 * @return Partial JSON String
 	 */
-	private static String serialize(ArrayList<Object> array, boolean multiline, int indentation, int level) {
+	private static String serialize(List<Object> array, boolean multiline, int indentation, int level) {
 		String serialized = "[";
 		
 		for (Object item : array) {
@@ -106,8 +107,8 @@ public class JSON {
 				case Integer i -> serialized += i.toString() + '"';
 				case Double d -> serialized += d.toString();
 				case Boolean b -> serialized += b.toString();
-				case HashMap h -> serialized += serialize(h, multiline, indentation, level + 1);
-				case ArrayList a -> serialized += serialize(a, multiline, indentation, level + 1);
+				case Map h -> serialized += serialize(h, multiline, indentation, level + 1);
+				case List a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";
 				default -> System.out.println("Invalid value");
 			}
@@ -136,9 +137,9 @@ public class JSON {
 	 * @return HashMap&lt;String, Object&gt;
 	 * @implNote TODO
 	 */
-	public static HashMap<String, Object> deserialize(String raw) {
+	public static <T extends Map<String, Object>> T deserialize(String raw, Supplier<T> mapFactory) {
 		// TODO
-		HashMap<String, Object> data = new HashMap<String, Object>();
+		T data = mapFactory.get();
 		return data;
 	}
 }

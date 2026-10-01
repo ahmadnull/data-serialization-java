@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 class TestTOML {
-    @Test void testJSONFormat() {
+    @Test void testJSON() {
     	String raw = "";
-    	HashMap<String, Object> data = TOML.deserialize(raw);
+    	HashMap<String, Object> data = TOML.deserialize(raw, HashMap::new);
     	data.put("name", "Leibniz");
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
