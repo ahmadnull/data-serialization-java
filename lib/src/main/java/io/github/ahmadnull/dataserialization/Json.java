@@ -1,9 +1,9 @@
 package io.github.ahmadnull.dataserialization;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -70,11 +70,27 @@ public class Json {
 	}
 
 	// Default Values
-	static boolean multilineDefault = true;
-	static int indentationDefault = 4;
-	static int levelDefault = 1;
-	static Supplier<Map<String, Object>> mapFactoryDefault = HashMap::new;
-	static Supplier<List<Object>> listFactoryDefault = ArrayList::new;
+	private static boolean multilineDefault = true;
+	private static int indentationDefault = 4;
+	private static int levelDefault = 1;
+	private static Supplier<Map<String, Object>> mapFactoryDefault = HashMap::new;
+	private static Supplier<List<Object>> listFactoryDefault = ArrayList::new;
+
+	public static <T> String serializeObject(T object, boolean multiline, int indentation, int level) {
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
+
+		Field[] fields = object.getClass().getDeclaredFields();
+		for (Field field : fields) {
+			field.setAccessible(true);
+			try {
+				map.put(field.getName(), field.get(object));
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		return serialize(map, multiline, indentation, level);
+	}
 
 	public static String serialize(Object data) {
 		return serialize(data, multilineDefault, indentationDefault, levelDefault);
@@ -187,7 +203,7 @@ public class Json {
 	}
 
     @SuppressWarnings("unchecked")
-	public static <T> T deserialize(String raw, Class<T> c) {
+	public static <T> T deserializeObject(String raw, Class<T> c) {
 		Object parsed = deserialize(raw);
         if (!(parsed instanceof Map))
             throw new JsonParsingException("Expected JSON Object root for class deserialization");
