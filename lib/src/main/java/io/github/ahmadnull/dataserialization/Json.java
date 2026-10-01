@@ -1,5 +1,9 @@
 package io.github.ahmadnull.dataserialization;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -26,6 +30,22 @@ public class Json {
 	        }
 	        return sb.toString();
 	    }
+
+		private static Object coerceType(Object value, Class<?> targetType) {
+		    if (value == null) return null;
+		    if (targetType.isInstance(value)) return value;
+
+		    if (value instanceof Number num) {
+		        if (targetType == int.class || targetType == Integer.class) return num.intValue();
+		        if (targetType == long.class || targetType == Long.class) return num.longValue();
+		        if (targetType == double.class || targetType == Double.class) return num.doubleValue();
+		        if (targetType == float.class || targetType == Float.class) return num.floatValue();
+		        if (targetType == short.class || targetType == Short.class) return num.shortValue();
+		        if (targetType == byte.class || targetType == Byte.class) return num.byteValue();
+		    }
+
+		    return value;
+		}
 	}
 
 	public static class JsonValueException extends RuntimeException {
@@ -37,83 +57,68 @@ public class Json {
 		}
 	}
 
+	public static class JsonParsingException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public JsonParsingException(String string) {
+			super(string);
+		}
+
+		public JsonParsingException(String string, Exception e) {
+			super(string, e);
+		}
+	}
+
 	// Default Values
 	static boolean multilineDefault = true;
 	static int indentationDefault = 4;
 	static int levelDefault = 1;
+	static Supplier<Map<String, Object>> mapFactoryDefault = HashMap::new;
+	static Supplier<List<Object>> listFactoryDefault = ArrayList::new;
 
-	/**
-	 * Serialize Map&lt;String, Object&gt; into JSON String
-	 * @param data
-	 * @return JSON String
-	 */
 	public static String serialize(Object data) {
 		return serialize(data, multilineDefault, indentationDefault, levelDefault);
 	}
 
-	/**
-	 * Serialize Map&lt;String, Object&gt; into JSON String
-	 * @param data
-	 * @param multiline
-	 * @return JSON String
-	 */
 	public static String serialize(Object data, boolean multiline) {
 		return serialize(data, multiline, indentationDefault, levelDefault);
 	}
 
-	/**
-	 * Serialize Map&lt;String, Object&gt; into JSON String
-	 * @param data
-	 * @param multiline
-	 * @param indentation
-	 * @return JSON String
-	 */
 	public static String serialize(Object data, boolean multiline, int indentation) {
 		return serialize(data, multiline, indentation, levelDefault);
 	}
 
-	/**
-	 * Serialize Map&lt;String, Object&gt; into JSON String
-	 * @param data
-	 * @param multiline
-	 * @param indentation
-	 * @param level
-	 * @return JSON String
-	 */
 	public static String serialize(Object data, boolean multiline, int indentation, int level) {
 		StringBuilder sb = new StringBuilder();
 		serializeValue(data, multiline, indentation, level, sb);
 		return sb.toString();
 	}
 
+	@SuppressWarnings("unchecked")
 	private static void serializeValue(
 			Object value,
 			boolean multiline,
 			int indentation, int level,
 			StringBuilder sb
-			) {
-
+	) {
 		switch(value) {
 			case String s -> sb.append('"').append(Helpers.escapeJson(s)).append('"');
-			case Integer i -> sb.append(i);
-			case Long l -> sb.append(l);
-			case Float f -> sb.append(f);
-			case Double d -> sb.append(d);
+			case Number n -> sb.append(n);
 			case Boolean b -> sb.append(b);
 			case Map m -> serializeMap(m, multiline, indentation, level, sb);
 			case List l -> serializeList(l, multiline, indentation, level, sb);
 			case Object[] a -> serializeArray(a, multiline, indentation, level, sb);
+			case null -> sb.append("null");
 			case Object other -> throw new Json.JsonValueException(other);
 		}
 	}
 
-	public static void serializeMap(
+	private static void serializeMap(
 			Map<String, Object> map,
 			boolean multiline,
 			int indentation, int level,
 			StringBuilder sb
-			) {
-
+	) {
 		sb.append('{');
 
 		if (!map.isEmpty()) {
@@ -133,13 +138,12 @@ public class Json {
         sb.append('}');
 	}
 
-	public static void serializeList(
+	private static void serializeList(
 			List<Object> list,
 			boolean multiline,
 			int indentation, int level,
 			StringBuilder sb
-			) {
-
+	) {
 		sb.append('[');
 
         if (list.iterator().hasNext()) {
@@ -158,13 +162,12 @@ public class Json {
         sb.append(']');
 	}
 
-	public static void serializeArray(
+	private static void serializeArray(
 			Object[] array,
 			boolean multiline,
 			int indentation, int level,
 			StringBuilder sb
-			) {
-
+	) {
 		sb.append('[');
 
         if (array.length > 0) {
@@ -183,16 +186,293 @@ public class Json {
         sb.append(']');
 	}
 
+    @SuppressWarnings("unchecked")
+	public static <T> T deserialize(String raw, Class<T> c) {
+		Object parsed = deserialize(raw);
+        if (!(parsed instanceof Map))
+            throw new JsonParsingException("Expected JSON Object root for class deserialization");
 
-	/**
-	 * Deserialize raw JSON String into Map&lt;String, Object&gt;
-	 * @param raw
-	 * @return Map&lt;String, Object&gt;
-	 * @implNote TODO
-	 */
-	public static <T extends Map<String, Object>> T deserialize(String raw, Supplier<T> mapFactory) {
-		// TODO
-		T data = mapFactory.get();
-		return data;
+		Map<String, Object> map = (Map<String, Object>) parsed;
+
+		T result;
+	    try {
+	        result = c.getDeclaredConstructor().newInstance();
+	    } catch (Exception e) {
+	        throw new JsonParsingException("Failed to instantiate target class: " + c.getName(), e);
+	    }
+
+	    for (Field field : c.getDeclaredFields()) {
+	        if (map.containsKey(field.getName())) {
+	            Object value = map.get(field.getName());
+	            field.setAccessible(true);
+
+	            try {
+	                if (value != null) {
+	                    value = Helpers.coerceType(value, field.getType());
+	                }
+	                field.set(result, value);
+	            } catch (Exception e) {
+	                throw new JsonParsingException("Failed to set field '" + field.getName() + "' on " + c.getName(), e);
+	            }
+	        }
+	    }
+
+		return result;
+	}
+
+	public static <L extends List<Object>> Object deserialize(String raw) {
+		return deserialize(raw, mapFactoryDefault, listFactoryDefault);
+	}
+
+	public static <L extends List<Object>> Object deserializeWithListFactory(
+			String raw,
+			Supplier<L> listFactory
+	) {
+		return deserialize(raw, mapFactoryDefault, listFactory);
+	}
+
+	public static <M extends Map<String, Object>> Object deserializeWithMapFactory(
+			String raw,
+			Supplier<M> mapFactory
+	) {
+		return deserialize(raw, mapFactory, listFactoryDefault);
+	}
+
+	public static <M extends Map<String, Object>, L extends List<Object>> Object deserialize(
+			String raw,
+			Supplier<M> mapFactory,
+			Supplier<L> listFactory
+	) {
+		if (raw == null) throw new JsonParsingException("Raw Json string can not be null");
+
+		Parser parser = new Parser(raw);
+		Object result = parser.parseValue(mapFactory, listFactory);
+		parser.skipWhitespace();
+		if (parser.hasMore())
+			throw new JsonParsingException("Unexpected trailing characters at position " + parser.index);
+
+		return result;
+	}
+
+	private static class Parser {
+		private final String src;
+		private int index = 0;
+
+		Parser(String src) {
+			this.src = src;
+		}
+
+		boolean hasMore() {
+			return index < src.length();
+		}
+
+		char peek() {
+			return hasMore() ? src.charAt(index) : '\0';
+		}
+
+		char next() {
+			return src.charAt(index++);
+		}
+
+		void skipWhitespace() {
+			while(hasMore() && Character.isWhitespace(peek())) index++;
+		}
+
+		<M extends Map<String, Object>, L extends List<Object>> Object parseValue(
+				Supplier<M> mapFactory,
+				Supplier<L> listFactory
+		) {
+			skipWhitespace();
+			if (!hasMore()) throw new JsonParsingException("Unexpected end of Input");
+
+			char c = peek();
+			if (c == '{') return parseObject(mapFactory, listFactory);
+            if (c == '[') return parseArray(mapFactory, listFactory);
+            if (c == '"') return parseString();
+            if (c == 't' || c == 'f') return parseBoolean();
+            if (c == 'n') return parseNull();
+            if (c == '-' || (c >= '0' && c <= '9')) return parseNumber();
+
+            throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
+		}
+
+		<M extends Map<String, Object>, L extends List<Object>> M parseObject(
+				Supplier<M> mapFactory,
+				Supplier<L> listFactory
+		) {
+			M map = mapFactory.get();
+			next(); // consume '{'
+			skipWhitespace();
+
+			if (peek() == '}') {
+				next(); // consume '}'
+				return map; // empty object
+			}
+
+			while(hasMore()) {
+				skipWhitespace();
+				if (peek() != '"')
+					throw new JsonParsingException("Expected string key in object at position " + index);
+
+				String key = parseString();
+				skipWhitespace();
+
+				if (peek() != ':')
+					throw new JsonParsingException("Expected ':' after key at position " + index);
+				next(); // consume ':'
+
+				Object value = parseValue(mapFactory, listFactory);
+				map.put(key, value);
+
+				skipWhitespace();
+				char c = peek();
+				if (c == '}') {
+					next(); // consume '}'
+					return map;
+				} else if (c == ',') {
+					next(); // consume ','
+				} else throw new JsonParsingException("Expected ',' or '}' in object at position " + index);
+			}
+
+			throw new JsonParsingException("Unterminated object starting at position " + index);
+		}
+
+		<M extends Map<String, Object>, L extends List<Object>> L parseArray(
+				Supplier<M> mapFactory,
+				Supplier<L> listFactory
+		) {
+			L list = listFactory.get();
+			next(); // consume '['
+			skipWhitespace();
+
+			if (peek() == ']') {
+				next(); // consume ']'
+				return list; // empty array
+			}
+
+			while(hasMore()) {
+				Object value = parseValue(mapFactory, listFactory);
+				list.add(value);
+
+				skipWhitespace();
+				char c = peek();
+				if (c == ']') {
+					next(); // consume ']'
+					return list;
+				} else if (c == ',') {
+					next(); // consume ','
+				} else throw new JsonParsingException("Expected ',' or ']' in array at position " + index);
+			}
+
+			throw new JsonParsingException("Unterminated array starting at position " + index);
+		}
+
+		String parseString() {
+			next(); // consume opening quote '"'
+			StringBuilder sb = new StringBuilder();
+
+			while(hasMore()) {
+				char c = next();
+				if (c == '"') // closing quote '"'
+					return sb.toString();
+
+				if (c == '\\') {
+					if (!hasMore())
+						throw new JsonParsingException("Unterminated escape sequence in string");
+
+					char esc = next();
+					switch (esc) {
+						case '"' -> sb.append('"');
+	                    case '\\' -> sb.append('\\');
+	                    case '/' -> sb.append('/');
+	                    case 'b' -> sb.append('\b');
+	                    case 'f' -> sb.append('\f');
+	                    case 'n' -> sb.append('\n');
+	                    case 'r' -> sb.append('\r');
+	                    case 't' -> sb.append('\t');
+	                    case 'u' -> {
+	                        if (index + 4 > src.length()) {
+	                            throw new JsonParsingException("Invalid unicode escape sequence");
+	                        }
+	                        String hex = src.substring(index, index + 4);
+	                        index += 4;
+	                        try {
+	                            sb.append((char) Integer.parseInt(hex, 16));
+	                        } catch (NumberFormatException e) {
+	                            throw new JsonParsingException("Invalid hex in unicode sequence: \\u" + hex);
+	                        }
+	                    }
+	                    default -> throw new JsonParsingException("Invalid escape sequence: \\" + esc);
+					}
+				} else {
+                    sb.append(c);
+                }
+			}
+
+			throw new JsonParsingException("Unterminated string literal");
+		}
+
+		Number parseNumber() {
+            int start = index;
+            if (peek() == '-') next();
+
+            while (hasMore() && Character.isDigit(peek())) {
+                next();
+            }
+
+            boolean isFloatingPoint = false;
+            if (hasMore() && peek() == '.') {
+                isFloatingPoint = true;
+                next(); // consume '.'
+                while (hasMore() && Character.isDigit(peek())) {
+                    next();
+                }
+            }
+
+            if (hasMore() && (peek() == 'e' || peek() == 'E')) {
+                isFloatingPoint = true;
+                next();
+                if (hasMore() && (peek() == '+' || peek() == '-')) {
+                    next();
+                }
+                while (hasMore() && Character.isDigit(peek())) {
+                    next();
+                }
+            }
+
+            String numStr = src.substring(start, index);
+            try {
+                if (isFloatingPoint) {
+                    return Double.parseDouble(numStr);
+                } else {
+                    long val = Long.parseLong(numStr);
+                    if (val >= Integer.MIN_VALUE && val <= Integer.MAX_VALUE) {
+                        return (int) val;
+                    }
+                    return val;
+                }
+            } catch (NumberFormatException e) {
+                throw new JsonParsingException("Invalid numeric value: " + numStr);
+            }
+        }
+
+        Boolean parseBoolean() {
+            if (src.startsWith("true", index)) {
+                index += 4;
+                return true;
+            } else if (src.startsWith("false", index)) {
+                index += 5;
+                return false;
+            }
+            throw new JsonParsingException("Invalid boolean at position " + index);
+        }
+
+        Object parseNull() {
+            if (src.startsWith("null", index)) {
+                index += 4;
+                return null;
+            }
+            throw new JsonParsingException("Invalid null token at position " + index);
+        }
 	}
 }

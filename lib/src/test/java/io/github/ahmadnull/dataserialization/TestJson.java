@@ -7,12 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 class TestJson {
     @Test void testJson() {
-    	String raw = "{}";
-    	HashMap<String, Object> data = Json.deserialize(raw, HashMap::new);
-    	data.put("name", "Leibniz");
+    	String raw = "{\"name\": \"Leibniz\"}";
+    	Map<String, Object> data = (LinkedHashMap<String, Object>) Json.deserializeWithMapFactory(raw, LinkedHashMap::new);
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
 
@@ -31,7 +32,7 @@ class TestJson {
 
     	String serialized = Json.serialize(data, false);
     	System.out.println(serialized);
-    	String expected = "{\"is_alive\": false, \"name\": \"Leibniz\", \"nested_data\": {\"key1\": \"value1\", \"key2\": \"value2\"}, \"nested_list\": [\"item1\", \"item2\"], \"birth_year\": 1646, \"nested_array\": [1, 2, 3]}";
+    	String expected = "{\"name\": \"Leibniz\", \"is_alive\": false, \"birth_year\": 1646, \"nested_data\": {\"key1\": \"value1\", \"key2\": \"value2\"}, \"nested_list\": [\"item1\", \"item2\"], \"nested_array\": [1, 2, 3]}";
 
     	assertEquals(expected, serialized);
     }
