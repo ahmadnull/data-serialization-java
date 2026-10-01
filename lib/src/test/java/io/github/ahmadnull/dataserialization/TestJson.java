@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class TestJSON {
-    @Test void testJSON() {
+class TestJson {
+    @Test void testJson() {
     	String raw = "{}";
-    	HashMap<String, Object> data = JSON.deserialize(raw, HashMap::new);
+    	HashMap<String, Object> data = Json.deserialize(raw, HashMap::new);
     	data.put("name", "Leibniz");
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
@@ -27,7 +27,7 @@ class TestJSON {
     	
     	data.put("nested_array", nestedArray);
     	    	
-    	String serialized = JSON.serialize(data, false);
+    	String serialized = Json.serialize(data, false);
     	
     	System.out.println(serialized);
     	

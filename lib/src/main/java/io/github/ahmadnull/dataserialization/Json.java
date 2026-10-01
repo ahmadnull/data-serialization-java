@@ -4,12 +4,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class JSON {
+public class Json {
 	
 	// Default Values
 	static boolean multilineDefault = true;
 	static int indentationDefault = 4;
 	static int levelDefault = 1;
+	
+	public static class JsonValueException extends RuntimeException {
+		public JsonValueException(Object value) {
+			super(value.toString() + ": is not a valid JSON value\n" +
+		         "Valid JSON values are: String, Integer, Double, Boolean, Map, List, and null.");
+		}
+	}
 	
 	/**
 	 * Serialize HashMap&lt;String, Object&gt; into JSON String
@@ -36,7 +43,7 @@ public class JSON {
 				case Map h -> serialized += serialize(h, multiline, indentation, level + 1);
 				case List a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";
-				default -> System.out.println("Invalid value");
+				case Object o -> throw new JsonValueException(o);
 			}
 			
 			serialized += ',';
@@ -110,7 +117,7 @@ public class JSON {
 				case Map h -> serialized += serialize(h, multiline, indentation, level + 1);
 				case List a -> serialized += serialize(a, multiline, indentation, level + 1);
 				case null -> serialized += "null";
-				default -> System.out.println("Invalid value");
+				case Object o -> throw new JsonValueException(o);
 			}
 			
 			serialized += ',';

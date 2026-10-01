@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class TOML {
+public class Toml {
 	
 	/**
 	 * Serialize HashMap&lt;String, Object&gt; into TOML String

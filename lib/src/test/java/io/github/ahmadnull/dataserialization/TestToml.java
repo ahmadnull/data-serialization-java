@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class TestTOML {
-    @Test void testJSON() {
+class TestToml {
+    @Test void testToml() {
     	String raw = "";
-    	HashMap<String, Object> data = TOML.deserialize(raw, HashMap::new);
+    	HashMap<String, Object> data = Toml.deserialize(raw, HashMap::new);
     	data.put("name", "Leibniz");
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
@@ -27,7 +27,7 @@ class TestTOML {
     	
     	data.put("nested_array", nestedArray);
     	    	
-    	String serialized = TOML.serialize(data);
+    	String serialized = Toml.serialize(data);
     	
     	System.out.println(serialized);
     	
