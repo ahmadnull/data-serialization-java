@@ -2,6 +2,8 @@ package io.github.ahmadnull.dataserialization;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.ahmadnull.dataserialization.Json.JsonSettings;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -13,7 +15,7 @@ import java.util.Map;
 class TestJson {
     @Test void testJson() {
     	String raw = "{\"name\": \"Leibniz\"}";
-    	Map<String, Object> data = (LinkedHashMap<String, Object>) Json.deserializeWithMapFactory(raw, LinkedHashMap::new);
+    	Map<String, Object> data = (LinkedHashMap<String, Object>) Json.deserialize(raw);
     	data.put("is_alive", false);
     	data.put("birth_year", 1646);
 
@@ -30,8 +32,11 @@ class TestJson {
     	Object[] nestedArray = {1, 2, 3};
     	data.put("nested_array", nestedArray);
 
-    	String serialized = Json.serialize(data, false);
-    	System.out.println(serialized);
+    	JsonSettings settings = new JsonSettings();
+    	settings.multiline = false;
+
+    	String serialized = Json.serialize(data, settings);
+        System.out.println(serialized);
     	String expected = "{\"name\": \"Leibniz\", \"is_alive\": false, \"birth_year\": 1646, \"nested_data\": {\"key1\": \"value1\", \"key2\": \"value2\"}, \"nested_list\": [\"item1\", \"item2\"], \"nested_array\": [1, 2, 3]}";
 
     	assertEquals(expected, serialized);

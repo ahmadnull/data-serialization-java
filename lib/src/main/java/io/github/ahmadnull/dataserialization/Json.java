@@ -2,7 +2,6 @@ package io.github.ahmadnull.dataserialization;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Collection;
 import java.util.Map;
@@ -73,10 +72,25 @@ public class Json {
 	private static boolean multilineDefault = true;
 	private static int indentationDefault = 4;
 	private static int levelDefault = 1;
-	private static Supplier<Map<String, Object>> mapFactoryDefault = HashMap::new;
+	private static Supplier<Map<String, Object>> mapFactoryDefault = LinkedHashMap::new;
 	private static Supplier<Collection<Object>> collectionFactoryDefault = ArrayList::new;
 
-	public static <T> String serializeObject(T object, boolean multiline, int indentation, int level) {
+	public static class JsonSettings {
+		public boolean multiline = multilineDefault;
+		public int indentation = indentationDefault;
+		public int level = levelDefault;
+		public Supplier<Map<String, Object>> mapFactory = mapFactoryDefault;
+		public Supplier<Collection<Object>> collectionFactory = collectionFactoryDefault;
+	}
+
+	// --- Serialization ---
+
+	public static <T> String serializeObject(T object) {
+		JsonSettings settings = new JsonSettings();
+		return serializeObject(object, settings);
+	}
+
+	public static <T> String serializeObject(T object, JsonSettings settings) {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 
 		Field[] fields = object.getClass().getDeclaredFields();
@@ -89,24 +103,17 @@ public class Json {
 			}
 		}
 
-		return serialize(map, multiline, indentation, level);
+		return serialize(map, settings);
 	}
 
 	public static String serialize(Object data) {
-		return serialize(data, multilineDefault, indentationDefault, levelDefault);
+		JsonSettings settings = new JsonSettings();
+		return serialize(data, settings);
 	}
 
-	public static String serialize(Object data, boolean multiline) {
-		return serialize(data, multiline, indentationDefault, levelDefault);
-	}
-
-	public static String serialize(Object data, boolean multiline, int indentation) {
-		return serialize(data, multiline, indentation, levelDefault);
-	}
-
-	public static String serialize(Object data, boolean multiline, int indentation, int level) {
+	public static String serialize(Object data, JsonSettings settings) {
 		StringBuilder sb = new StringBuilder();
-		serializeValue(data, multiline, indentation, level, sb);
+		serializeValue(data, settings.multiline, settings.indentation, settings.level, sb);
 		return sb.toString();
 	}
 
@@ -202,6 +209,8 @@ public class Json {
         sb.append(']');
 	}
 
+	// --- Deserialization ---
+
     @SuppressWarnings("unchecked")
 	public static <T> T deserializeObject(String raw, Class<T> c) {
 		Object parsed = deserialize(raw);
@@ -236,33 +245,19 @@ public class Json {
 		return result;
 	}
 
-	public static <C extends Collection<Object>> Object deserialize(String raw) {
-		return deserialize(raw, mapFactoryDefault, collectionFactoryDefault);
-	}
-
-	public static <C extends Collection<Object>> Object deserializeWithcollectionFactory(
-			String raw,
-			Supplier<C> collectionFactory
-	) {
-		return deserialize(raw, mapFactoryDefault, collectionFactory);
-	}
-
-	public static <M extends Map<String, Object>> Object deserializeWithMapFactory(
-			String raw,
-			Supplier<M> mapFactory
-	) {
-		return deserialize(raw, mapFactory, collectionFactoryDefault);
+	public static Object deserialize(String raw) {
+		JsonSettings settings = new JsonSettings();
+		return deserialize(raw, settings);
 	}
 
 	public static <M extends Map<String, Object>, C extends Collection<Object>> Object deserialize(
 			String raw,
-			Supplier<M> mapFactory,
-			Supplier<C> collectionFactory
+			JsonSettings settings
 	) {
 		if (raw == null) throw new JsonParsingException("Raw Json string can not be null");
 
 		Parser parser = new Parser(raw);
-		Object result = parser.parseValue(mapFactory, collectionFactory);
+		Object result = parser.parseValue(settings.mapFactory, settings.collectionFactory);
 		parser.skipWhitespace();
 		if (parser.hasMore())
 			throw new JsonParsingException("Unexpected trailing characters at position " + parser.index);
