@@ -8,145 +8,145 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class Json {
-	private static class Helpers {
-		private static String escapeJson(String input) {
-	        if (input == null) return "";
-	        StringBuilder sb = new StringBuilder();
-	        for (char c : input.toCharArray()) {
-	            switch (c) {
-	                case '"' -> sb.append("\\\"");
-	                case '\\' -> sb.append("\\\\");
-	                case '\b' -> sb.append("\\b");
-	                case '\f' -> sb.append("\\f");
-	                case '\n' -> sb.append("\\n");
-	                case '\r' -> sb.append("\\r");
-	                case '\t' -> sb.append("\\t");
-	                default -> {
-	                    if (c <= 0x1F) sb.append(String.format("\\u%04x", (int) c));
-	                    else sb.append(c);
-	                }
-	            }
-	        }
-	        return sb.toString();
-	    }
+    private static class Helpers {
+        private static String escapeJson(String input) {
+            if (input == null) return "";
+            StringBuilder sb = new StringBuilder();
+            for (char c : input.toCharArray()) {
+                switch (c) {
+                    case '"' -> sb.append("\\\"");
+                    case '\\' -> sb.append("\\\\");
+                    case '\b' -> sb.append("\\b");
+                    case '\f' -> sb.append("\\f");
+                    case '\n' -> sb.append("\\n");
+                    case '\r' -> sb.append("\\r");
+                    case '\t' -> sb.append("\\t");
+                    default -> {
+                        if (c <= 0x1F) sb.append(String.format("\\u%04x", (int) c));
+                        else sb.append(c);
+                    }
+                }
+            }
+            return sb.toString();
+        }
 
-		private static Object coerceType(Object value, Class<?> targetType) {
-		    if (value == null) return null;
-		    if (targetType.isInstance(value)) return value;
+        private static Object coerceType(Object value, Class<?> targetType) {
+            if (value == null) return null;
+            if (targetType.isInstance(value)) return value;
 
-		    if (value instanceof Number num) {
-		        if (targetType == int.class || targetType == Integer.class) return num.intValue();
-		        if (targetType == long.class || targetType == Long.class) return num.longValue();
-		        if (targetType == double.class || targetType == Double.class) return num.doubleValue();
-		        if (targetType == float.class || targetType == Float.class) return num.floatValue();
-		        if (targetType == short.class || targetType == Short.class) return num.shortValue();
-		        if (targetType == byte.class || targetType == Byte.class) return num.byteValue();
-		    }
+            if (value instanceof Number num) {
+                if (targetType == int.class || targetType == Integer.class) return num.intValue();
+                if (targetType == long.class || targetType == Long.class) return num.longValue();
+                if (targetType == double.class || targetType == Double.class) return num.doubleValue();
+                if (targetType == float.class || targetType == Float.class) return num.floatValue();
+                if (targetType == short.class || targetType == Short.class) return num.shortValue();
+                if (targetType == byte.class || targetType == Byte.class) return num.byteValue();
+            }
 
-		    return value;
-		}
-	}
+            return value;
+        }
+    }
 
-	public static class JsonValueException extends RuntimeException {
-		private static final long serialVersionUID = 1L;
+    public static class JsonValueException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
 
-		public JsonValueException(Object value) {
-			super(value.toString() + ": is not a valid JSON value\n" +
-		         "Valid JSON values are: String, Integer, Double, Boolean, Map, Collection, and null.");
-		}
-	}
+        public JsonValueException(Object value) {
+            super(value.toString() + ": is not a valid JSON value\n" +
+                "Valid JSON values are: String, Integer, Double, Boolean, Map, Collection, and null.");
+        }
+    }
 
-	public static class JsonParsingException extends RuntimeException {
-		private static final long serialVersionUID = 1L;
+    public static class JsonParsingException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
 
-		public JsonParsingException(String string) {
-			super(string);
-		}
+        public JsonParsingException(String string) {
+            super(string);
+        }
 
-		public JsonParsingException(String string, Exception e) {
-			super(string, e);
-		}
-	}
+        public JsonParsingException(String string, Exception e) {
+            super(string, e);
+        }
+    }
 
-	// Default Values
-	private static boolean multilineDefault = true;
-	private static int indentationDefault = 4;
-	private static int levelDefault = 1;
-	private static Supplier<Map<String, Object>> mapFactoryDefault = LinkedHashMap::new;
-	private static Supplier<Collection<Object>> collectionFactoryDefault = ArrayList::new;
-	private static int maxDepthDefault = 1000;
+    // Default Values
+    private static boolean multilineDefault = true;
+    private static int indentationDefault = 4;
+    private static int levelDefault = 1;
+    private static Supplier<Map<String, Object>> mapFactoryDefault = LinkedHashMap::new;
+    private static Supplier<Collection<Object>> collectionFactoryDefault = ArrayList::new;
+    private static int maxDepthDefault = 1000;
 
-	public static class JsonSettings {
-		public boolean multiline = multilineDefault;
-		public int indentation = indentationDefault;
-		public int level = levelDefault;
-		public Supplier<Map<String, Object>> mapFactory = mapFactoryDefault;
-		public Supplier<Collection<Object>> collectionFactory = collectionFactoryDefault;
-		public int maxDepth = maxDepthDefault;
-	}
+    public static class JsonSettings {
+        public boolean multiline = multilineDefault;
+        public int indentation = indentationDefault;
+        public int level = levelDefault;
+        public Supplier<Map<String, Object>> mapFactory = mapFactoryDefault;
+        public Supplier<Collection<Object>> collectionFactory = collectionFactoryDefault;
+        public int maxDepth = maxDepthDefault;
+    }
 
-	// --- Serialization ---
+    // --- Serialization ---
 
-	public static <T> String serializeObject(T object) {
-		JsonSettings settings = new JsonSettings();
-		return serializeObject(object, settings);
-	}
+    public static <T> String serializeObject(T object) {
+        JsonSettings settings = new JsonSettings();
+        return serializeObject(object, settings);
+    }
 
-	public static <T> String serializeObject(T object, JsonSettings settings) {
-		Map<String, Object> map = new LinkedHashMap<String, Object>();
+    public static <T> String serializeObject(T object, JsonSettings settings) {
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
 
-		Field[] fields = object.getClass().getDeclaredFields();
-		for (Field field : fields) {
-			field.setAccessible(true);
-			try {
-				map.put(field.getName(), field.get(object));
-			} catch (IllegalArgumentException | IllegalAccessException e) {
-				throw new RuntimeException(e);
-			}
-		}
+        Field[] fields = object.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                map.put(field.getName(), field.get(object));
+            } catch (IllegalArgumentException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
-		return serialize(map, settings);
-	}
+        return serialize(map, settings);
+    }
 
-	public static String serialize(Object data) {
-		JsonSettings settings = new JsonSettings();
-		return serialize(data, settings);
-	}
+    public static String serialize(Object data) {
+        JsonSettings settings = new JsonSettings();
+        return serialize(data, settings);
+    }
 
-	public static String serialize(Object data, JsonSettings settings) {
-		StringBuilder sb = new StringBuilder();
-		serializeValue(data, settings.multiline, settings.indentation, settings.level, sb);
-		return sb.toString();
-	}
+    public static String serialize(Object data, JsonSettings settings) {
+        StringBuilder sb = new StringBuilder();
+        serializeValue(data, settings.multiline, settings.indentation, settings.level, sb);
+        return sb.toString();
+    }
 
-	@SuppressWarnings("unchecked")
-	private static void serializeValue(
-			Object value,
-			boolean multiline,
-			int indentation, int level,
-			StringBuilder sb
-	) {
-		switch(value) {
-			case String s -> sb.append('"').append(Helpers.escapeJson(s)).append('"');
-			case Number n -> sb.append(n);
-			case Boolean b -> sb.append(b);
-			case Map m -> serializeMap(m, multiline, indentation, level, sb);
-			case Collection l -> serializeCollection(l, multiline, indentation, level, sb);
-			case Object[] a -> serializeArray(a, multiline, indentation, level, sb);
-			case null -> sb.append("null");
-			case Object other -> throw new Json.JsonValueException(other);
-		}
-	}
+    @SuppressWarnings("unchecked")
+    private static void serializeValue(
+            Object value,
+            boolean multiline,
+            int indentation, int level,
+            StringBuilder sb
+    ) {
+        switch(value) {
+            case String s -> sb.append('"').append(Helpers.escapeJson(s)).append('"');
+            case Number n -> sb.append(n);
+            case Boolean b -> sb.append(b);
+            case Map m -> serializeMap(m, multiline, indentation, level, sb);
+            case Collection l -> serializeCollection(l, multiline, indentation, level, sb);
+            case Object[] a -> serializeArray(a, multiline, indentation, level, sb);
+            case null -> sb.append("null");
+            case Object other -> throw new Json.JsonValueException(other);
+        }
+    }
 
-	private static void serializeMap(
-			Map<String, Object> map,
-			boolean multiline,
-			int indentation, int level,
-			StringBuilder sb
-	) {
-		sb.append('{');
+    private static void serializeMap(
+            Map<String, Object> map,
+            boolean multiline,
+            int indentation, int level,
+            StringBuilder sb
+    ) {
+        sb.append('{');
 
-		if (!map.isEmpty()) {
+        if (!map.isEmpty()) {
             boolean first = true;
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 if (!first) sb.append(',');
@@ -161,15 +161,15 @@ public class Json {
         }
 
         sb.append('}');
-	}
+    }
 
-	private static void serializeCollection(
-			Collection<Object> Collection,
-			boolean multiline,
-			int indentation, int level,
-			StringBuilder sb
-	) {
-		sb.append('[');
+    private static void serializeCollection(
+            Collection<Object> Collection,
+            boolean multiline,
+            int indentation, int level,
+            StringBuilder sb
+    ) {
+        sb.append('[');
 
         if (Collection.iterator().hasNext()) {
             boolean first = true;
@@ -185,15 +185,15 @@ public class Json {
         }
 
         sb.append(']');
-	}
+    }
 
-	private static void serializeArray(
-			Object[] array,
-			boolean multiline,
-			int indentation, int level,
-			StringBuilder sb
-	) {
-		sb.append('[');
+    private static void serializeArray(
+            Object[] array,
+            boolean multiline,
+            int indentation, int level,
+            StringBuilder sb
+    ) {
+        sb.append('[');
 
         if (array.length > 0) {
             boolean first = true;
@@ -209,251 +209,251 @@ public class Json {
         }
 
         sb.append(']');
-	}
+    }
 
-	// --- Deserialization ---
+    // --- Deserialization ---
 
     @SuppressWarnings("unchecked")
-	public static <T> T deserializeObject(String raw, Class<T> c) {
-		Object parsed = deserialize(raw);
+    public static <T> T deserializeObject(String raw, Class<T> c) {
+        Object parsed = deserialize(raw);
         if (!(parsed instanceof Map))
             throw new JsonParsingException("Expected JSON Object root for class deserialization");
 
-		Map<String, Object> map = (Map<String, Object>) parsed;
+        Map<String, Object> map = (Map<String, Object>) parsed;
 
-		T result;
-	    try {
-	        result = c.getDeclaredConstructor().newInstance();
-	    } catch (Exception e) {
-	        throw new JsonParsingException("Failed to instantiate target class: " + c.getName(), e);
-	    }
+        T result;
+        try {
+            result = c.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new JsonParsingException("Failed to instantiate target class: " + c.getName(), e);
+        }
 
-	    for (Field field : c.getDeclaredFields()) {
-	        if (map.containsKey(field.getName())) {
-	            Object value = map.get(field.getName());
-	            field.setAccessible(true);
+        for (Field field : c.getDeclaredFields()) {
+            if (map.containsKey(field.getName())) {
+                Object value = map.get(field.getName());
+                field.setAccessible(true);
 
-	            try {
-	                if (value != null) {
-	                    value = Helpers.coerceType(value, field.getType());
-	                }
-	                field.set(result, value);
-	            } catch (Exception e) {
-	                throw new JsonParsingException("Failed to set field '" + field.getName() + "' on " + c.getName(), e);
-	            }
-	        }
-	    }
+                try {
+                    if (value != null) {
+                        value = Helpers.coerceType(value, field.getType());
+                    }
+                    field.set(result, value);
+                } catch (Exception e) {
+                    throw new JsonParsingException("Failed to set field '" + field.getName() + "' on " + c.getName(), e);
+                }
+            }
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	public static Object deserialize(String raw) {
-		JsonSettings settings = new JsonSettings();
-		return deserialize(raw, settings);
-	}
+    public static Object deserialize(String raw) {
+        JsonSettings settings = new JsonSettings();
+        return deserialize(raw, settings);
+    }
 
-	public static Object deserialize(
-			String raw,
-			JsonSettings settings
-	) {
-		if (raw == null) throw new JsonParsingException("Raw Json string can not be null");
+    public static Object deserialize(
+            String raw,
+            JsonSettings settings
+    ) {
+        if (raw == null) throw new JsonParsingException("Raw Json string can not be null");
 
-		Parser parser = new Parser(raw, settings);
-		Object result = parser.parseValue();
-		parser.skipWhitespace();
-		if (parser.hasMore())
-			throw new JsonParsingException("Unexpected trailing characters at position " + parser.index);
+        Parser parser = new Parser(raw, settings);
+        Object result = parser.parseValue();
+        parser.skipWhitespace();
+        if (parser.hasMore())
+            throw new JsonParsingException("Unexpected trailing characters at position " + parser.index);
 
-		return result;
-	}
+        return result;
+    }
 
-	private static class Parser {
-		private final String src;
-		private final int maxDepth;
-		private final Supplier<Map<String, Object>> mapFactory;
-		private final Supplier<Collection<Object>> collectionFactory;
-		private int index = 0;
-		private int depth = 0;
+    private static class Parser {
+        private final String src;
+        private final int maxDepth;
+        private final Supplier<Map<String, Object>> mapFactory;
+        private final Supplier<Collection<Object>> collectionFactory;
+        private int index = 0;
+        private int depth = 0;
 
-		Parser(String src, JsonSettings settings) {
-			this.src = src;
-			this.maxDepth = settings.maxDepth;
-			this.mapFactory = settings.mapFactory;
-			this.collectionFactory = settings.collectionFactory;
-		}
+        Parser(String src, JsonSettings settings) {
+            this.src = src;
+            this.maxDepth = settings.maxDepth;
+            this.mapFactory = settings.mapFactory;
+            this.collectionFactory = settings.collectionFactory;
+        }
 
-		boolean hasMore() {
-			return index < src.length();
-		}
+        boolean hasMore() {
+            return index < src.length();
+        }
 
-		boolean isDigit() {
-			char c = peek();
-			return c >= '0' && c <= '9';
-		}
+        boolean isDigit() {
+            char c = peek();
+            return c >= '0' && c <= '9';
+        }
 
-		boolean isJsonWhitespace() {
-			char c = peek();
-			return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-		}
+        boolean isJsonWhitespace() {
+            char c = peek();
+            return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+        }
 
-		char peek() {
-			return hasMore() ? src.charAt(index) : '\0';
-		}
+        char peek() {
+            return hasMore() ? src.charAt(index) : '\0';
+        }
 
-		char next() {
-			return src.charAt(index++);
-		}
+        char next() {
+            return src.charAt(index++);
+        }
 
-		void skipWhitespace() {
-			while(hasMore() && isJsonWhitespace()) index++;
-		}
+        void skipWhitespace() {
+            while(hasMore() && isJsonWhitespace()) index++;
+        }
 
-		Object parseValue() {
-			skipWhitespace();
-			if (!hasMore()) throw new JsonParsingException("Unexpected end of Input");
+        Object parseValue() {
+            skipWhitespace();
+            if (!hasMore()) throw new JsonParsingException("Unexpected end of Input");
 
-			char c = peek();
-			if (depth >= maxDepth)
-			    throw new JsonParsingException("Maximum nesting depth of " + maxDepth + " exceeded at position " + index);
-			try {
-			    depth++;
-			    return switch (c) {
-			    	case '{' -> parseObject();
-			    	case '[' -> parseArray();
-			    	case '"' -> parseString();
-			    	case 't', 'f' -> parseBoolean();
-			    	case 'n' -> parseNull();
-			    	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> parseNumber();
-			    	default -> throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
-			    };
-			} finally {
-			    depth--;
-			}
-		}
+            char c = peek();
+            if (depth >= maxDepth)
+                throw new JsonParsingException("Maximum nesting depth of " + maxDepth + " exceeded at position " + index);
+            try {
+                depth++;
+                return switch (c) {
+                    case '{' -> parseObject();
+                    case '[' -> parseArray();
+                    case '"' -> parseString();
+                    case 't', 'f' -> parseBoolean();
+                    case 'n' -> parseNull();
+                    case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> parseNumber();
+                    default -> throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
+                };
+            } finally {
+                depth--;
+            }
+        }
 
-		Map<String, Object> parseObject() {
-			Map<String, Object> map = mapFactory.get();
-			next(); // consume '{'
-			skipWhitespace();
+        Map<String, Object> parseObject() {
+            Map<String, Object> map = mapFactory.get();
+            next(); // consume '{'
+            skipWhitespace();
 
-			if (peek() == '}') {
-				next(); // consume '}'
-				return map; // empty object
-			}
+            if (peek() == '}') {
+                next(); // consume '}'
+                return map; // empty object
+            }
 
-			while(hasMore()) {
-				skipWhitespace();
-				if (peek() != '"')
-					throw new JsonParsingException("Expected string key in object at position " + index);
+            while(hasMore()) {
+                skipWhitespace();
+                if (peek() != '"')
+                    throw new JsonParsingException("Expected string key in object at position " + index);
 
-				String key = parseString();
-				skipWhitespace();
+                String key = parseString();
+                skipWhitespace();
 
-				if (peek() != ':')
-					throw new JsonParsingException("Expected ':' after key at position " + index);
-				next(); // consume ':'
+                if (peek() != ':')
+                    throw new JsonParsingException("Expected ':' after key at position " + index);
+                next(); // consume ':'
 
-				Object value = parseValue();
-				map.put(key, value);
+                Object value = parseValue();
+                map.put(key, value);
 
-				skipWhitespace();
-				char c = peek();
-				if (c == '}') {
-					next(); // consume '}'
-					return map;
-				} else if (c == ',') {
-					next(); // consume ','
-				} else throw new JsonParsingException("Expected ',' or '}' in object at position " + index);
-			}
+                skipWhitespace();
+                char c = peek();
+                if (c == '}') {
+                    next(); // consume '}'
+                    return map;
+                } else if (c == ',') {
+                    next(); // consume ','
+                } else throw new JsonParsingException("Expected ',' or '}' in object at position " + index);
+            }
 
-			throw new JsonParsingException("Unterminated object starting at position " + index);
-		}
+            throw new JsonParsingException("Unterminated object starting at position " + index);
+        }
 
-		Collection<Object> parseArray() {
-			Collection<Object> collection = collectionFactory.get();
-			next(); // consume '['
-			skipWhitespace();
+        Collection<Object> parseArray() {
+            Collection<Object> collection = collectionFactory.get();
+            next(); // consume '['
+            skipWhitespace();
 
-			if (peek() == ']') {
-				next(); // consume ']'
-				return collection; // empty array
-			}
+            if (peek() == ']') {
+                next(); // consume ']'
+                return collection; // empty array
+            }
 
-			while(hasMore()) {
-				Object value = parseValue();
-				collection.add(value);
+            while(hasMore()) {
+                Object value = parseValue();
+                collection.add(value);
 
-				skipWhitespace();
-				char c = peek();
-				if (c == ']') {
-					next(); // consume ']'
-					return collection;
-				} else if (c == ',') {
-					next(); // consume ','
-				} else throw new JsonParsingException("Expected ',' or ']' in array at position " + index);
-			}
+                skipWhitespace();
+                char c = peek();
+                if (c == ']') {
+                    next(); // consume ']'
+                    return collection;
+                } else if (c == ',') {
+                    next(); // consume ','
+                } else throw new JsonParsingException("Expected ',' or ']' in array at position " + index);
+            }
 
-			throw new JsonParsingException("Unterminated array starting at position " + index);
-		}
+            throw new JsonParsingException("Unterminated array starting at position " + index);
+        }
 
-		String parseString() {
-			next(); // consume opening quote '"'
-			StringBuilder sb = new StringBuilder();
+        String parseString() {
+            next(); // consume opening quote '"'
+            StringBuilder sb = new StringBuilder();
 
-			while(hasMore()) {
-				char c = next();
-				if (c == '"') // closing quote '"'
-					return sb.toString();
+            while(hasMore()) {
+                char c = next();
+                if (c == '"') // closing quote '"'
+                    return sb.toString();
 
-				if (c == '\\') {
-					if (!hasMore())
-						throw new JsonParsingException("Unterminated escape sequence in string");
+                if (c == '\\') {
+                    if (!hasMore())
+                        throw new JsonParsingException("Unterminated escape sequence in string");
 
-					char esc = next();
-					switch (esc) {
-						case '"' -> sb.append('"');
-	                    case '\\' -> sb.append('\\');
-	                    case '/' -> sb.append('/');
-	                    case 'b' -> sb.append('\b');
-	                    case 'f' -> sb.append('\f');
-	                    case 'n' -> sb.append('\n');
-	                    case 'r' -> sb.append('\r');
-	                    case 't' -> sb.append('\t');
-	                    case 'u' -> {
-	                        if (index + 4 > src.length()) {
-	                            throw new JsonParsingException("Invalid unicode escape sequence");
-	                        }
-	                        String hex = src.substring(index, index + 4);
-	                        index += 4;
-	                        try {
-	                            sb.append((char) Integer.parseInt(hex, 16));
-	                        } catch (NumberFormatException e) {
-	                            throw new JsonParsingException("Invalid hex in unicode sequence: \\u" + hex);
-	                        }
-	                    }
-	                    default -> throw new JsonParsingException("Invalid escape sequence: \\" + esc);
-					}
-				} else {
-					if (c < 0x20)
-					    throw new JsonParsingException(
-					        "Unescaped control character U+" + String.format("%04X", (int) c) + " at position " + (index - 1));
+                    char esc = next();
+                    switch (esc) {
+                        case '"' -> sb.append('"');
+                        case '\\' -> sb.append('\\');
+                        case '/' -> sb.append('/');
+                        case 'b' -> sb.append('\b');
+                        case 'f' -> sb.append('\f');
+                        case 'n' -> sb.append('\n');
+                        case 'r' -> sb.append('\r');
+                        case 't' -> sb.append('\t');
+                        case 'u' -> {
+                            if (index + 4 > src.length()) {
+                                throw new JsonParsingException("Invalid unicode escape sequence");
+                            }
+                            String hex = src.substring(index, index + 4);
+                            index += 4;
+                            try {
+                                sb.append((char) Integer.parseInt(hex, 16));
+                            } catch (NumberFormatException e) {
+                                throw new JsonParsingException("Invalid hex in unicode sequence: \\u" + hex);
+                            }
+                        }
+                        default -> throw new JsonParsingException("Invalid escape sequence: \\" + esc);
+                    }
+                } else {
+                    if (c < 0x20)
+                        throw new JsonParsingException(
+                            "Unescaped control character U+" + String.format("%04X", (int) c) + " at position " + (index - 1));
                     sb.append(c);
                 }
-			}
+            }
 
-			throw new JsonParsingException("Unterminated string literal");
-		}
+            throw new JsonParsingException("Unterminated string literal");
+        }
 
-		Number parseNumber() {
+        Number parseNumber() {
             int start = index;
             if (peek() == '-') next();
             if (!isDigit())
-            	throw new JsonParsingException("Invalid character at position " + index + ". Expected a digit");
+                throw new JsonParsingException("Invalid character at position " + index + ". Expected a digit");
 
             if (peek() == '0') {
-            	next();
-            	if (isDigit())
-                	throw new JsonParsingException("Invalid digit at position " + index + ". Numeric values can not have leading zeros");
+                next();
+                if (isDigit())
+                    throw new JsonParsingException("Invalid digit at position " + index + ". Numeric values can not have leading zeros");
             } else while (hasMore() && isDigit()) next();
 
             boolean isFloatingPoint = false;
@@ -461,7 +461,7 @@ public class Json {
                 isFloatingPoint = true;
                 next(); // consume '.'
                 if (!isDigit())
-                	throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the decimal point");
+                    throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the decimal point");
                 while (hasMore() && isDigit()) {
                     next();
                 }
@@ -474,7 +474,7 @@ public class Json {
                     next();
                 }
                 if (!isDigit())
-                	throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the scientific notation (e/E)");
+                    throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the scientific notation (e/E)");
                 while (hasMore() && isDigit()) {
                     next();
                 }
@@ -514,5 +514,5 @@ public class Json {
             }
             throw new JsonParsingException("Invalid null token at position " + index);
         }
-	}
+    }
 }

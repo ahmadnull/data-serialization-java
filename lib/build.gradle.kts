@@ -4,6 +4,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+
+    // Keep whitespace of the sources consistent.
+    id("com.diffplug.spotless") version "8.10.3"
 }
 
 repositories {
@@ -24,6 +27,15 @@ sourceSets {
     // read them as resources.
     named("test") {
         resources.srcDir(rootProject.file("test_suites/json"))
+    }
+}
+
+spotless {
+    format("whitespace") {
+        target("src/**/*.java")
+        trimTrailingWhitespace()
+        endWithNewline()
+        leadingTabsToSpaces(4)
     }
 }
 

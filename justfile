@@ -6,7 +6,7 @@ _default: test-show-only-failed
 [arg('breaking', short='B', value='1')]
 [arg('body', short='b')]
 [arg('footer', short='f')]
-commit type description scope='' breaking='0' body='' footer='': clean-whitespace add-all
+commit type description scope='' breaking='0' body='' footer='': format add-all
     #!/bin/env sh
     if [ -n "{{scope}}" ]; then scope="({{scope}})"; fi
     if [ "{{breaking}}" -eq "1" ]; then breaking="!"; fi
@@ -30,6 +30,10 @@ test-show-only-failed: (test "test" "-PtestLogEvents=failed")
 clean-whitespace:
     sed 's/[ \t]*$//' lib/src/main/java/io/github/ahmadnull/dataserialization/* -i
     sed 's/[ \t]*$//' lib/src/test/java/io/github/ahmadnull/dataserialization/* -i
+
+[group('chore')]
+format:
+    ./gradlew spotlessApply
 
 [group('setup')]
 setup: gradle-wrapper
