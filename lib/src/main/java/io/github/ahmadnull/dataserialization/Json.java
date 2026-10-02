@@ -74,6 +74,7 @@ public class Json {
 	private static int levelDefault = 1;
 	private static Supplier<Map<String, Object>> mapFactoryDefault = LinkedHashMap::new;
 	private static Supplier<Collection<Object>> collectionFactoryDefault = ArrayList::new;
+	private static int maxDepthDefault = 1000;
 
 	public static class JsonSettings {
 		public boolean multiline = multilineDefault;
@@ -81,6 +82,7 @@ public class Json {
 		public int level = levelDefault;
 		public Supplier<Map<String, Object>> mapFactory = mapFactoryDefault;
 		public Supplier<Collection<Object>> collectionFactory = collectionFactoryDefault;
+		public int maxDepth = maxDepthDefault;
 	}
 
 	// --- Serialization ---
@@ -250,14 +252,14 @@ public class Json {
 		return deserialize(raw, settings);
 	}
 
-	public static <M extends Map<String, Object>, C extends Collection<Object>> Object deserialize(
+	public static Object deserialize(
 			String raw,
 			JsonSettings settings
 	) {
 		if (raw == null) throw new JsonParsingException("Raw Json string can not be null");
 
-		Parser parser = new Parser(raw);
-		Object result = parser.parseValue(settings.mapFactory, settings.collectionFactory);
+		Parser parser = new Parser(raw, settings);
+		Object result = parser.parseValue();
 		parser.skipWhitespace();
 		if (parser.hasMore())
 			throw new JsonParsingException("Unexpected trailing characters at position " + parser.index);
@@ -267,14 +269,31 @@ public class Json {
 
 	private static class Parser {
 		private final String src;
+		private final int maxDepth;
+		private final Supplier<Map<String, Object>> mapFactory;
+		private final Supplier<Collection<Object>> collectionFactory;
 		private int index = 0;
+		private int depth = 0;
 
-		Parser(String src) {
+		Parser(String src, JsonSettings settings) {
 			this.src = src;
+			this.maxDepth = settings.maxDepth;
+			this.mapFactory = settings.mapFactory;
+			this.collectionFactory = settings.collectionFactory;
 		}
 
 		boolean hasMore() {
 			return index < src.length();
+		}
+
+		boolean isDigit() {
+			char c = peek();
+			return c >= '0' && c <= '9';
+		}
+
+		boolean isJsonWhitespace() {
+			char c = peek();
+			return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 		}
 
 		char peek() {
@@ -286,32 +305,34 @@ public class Json {
 		}
 
 		void skipWhitespace() {
-			while(hasMore() && Character.isWhitespace(peek())) index++;
+			while(hasMore() && isJsonWhitespace()) index++;
 		}
 
-		<M extends Map<String, Object>, C extends Collection<Object>> Object parseValue(
-				Supplier<M> mapFactory,
-				Supplier<C> collectionFactory
-		) {
+		Object parseValue() {
 			skipWhitespace();
 			if (!hasMore()) throw new JsonParsingException("Unexpected end of Input");
 
 			char c = peek();
-			if (c == '{') return parseObject(mapFactory, collectionFactory);
-            if (c == '[') return parseArray(mapFactory, collectionFactory);
-            if (c == '"') return parseString();
-            if (c == 't' || c == 'f') return parseBoolean();
-            if (c == 'n') return parseNull();
-            if (c == '-' || (c >= '0' && c <= '9')) return parseNumber();
-
-            throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
+			if (depth >= maxDepth)
+			    throw new JsonParsingException("Maximum nesting depth of " + maxDepth + " exceeded at position " + index);
+			try {
+			    depth++;
+			    return switch (c) {
+			    	case '{' -> parseObject();
+			    	case '[' -> parseArray();
+			    	case '"' -> parseString();
+			    	case 't', 'f' -> parseBoolean();
+			    	case 'n' -> parseNull();
+			    	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> parseNumber();
+			    	default -> throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
+			    };
+			} finally {
+			    depth--;
+			}
 		}
 
-		<M extends Map<String, Object>, C extends Collection<Object>> M parseObject(
-				Supplier<M> mapFactory,
-				Supplier<C> collectionFactory
-		) {
-			M map = mapFactory.get();
+		Map<String, Object> parseObject() {
+			Map<String, Object> map = mapFactory.get();
 			next(); // consume '{'
 			skipWhitespace();
 
@@ -332,7 +353,7 @@ public class Json {
 					throw new JsonParsingException("Expected ':' after key at position " + index);
 				next(); // consume ':'
 
-				Object value = parseValue(mapFactory, collectionFactory);
+				Object value = parseValue();
 				map.put(key, value);
 
 				skipWhitespace();
@@ -348,11 +369,8 @@ public class Json {
 			throw new JsonParsingException("Unterminated object starting at position " + index);
 		}
 
-		<M extends Map<String, Object>, C extends Collection<Object>> C parseArray(
-				Supplier<M> mapFactory,
-				Supplier<C> collectionFactory
-		) {
-			C collection = collectionFactory.get();
+		Collection<Object> parseArray() {
+			Collection<Object> collection = collectionFactory.get();
 			next(); // consume '['
 			skipWhitespace();
 
@@ -362,7 +380,7 @@ public class Json {
 			}
 
 			while(hasMore()) {
-				Object value = parseValue(mapFactory, collectionFactory);
+				Object value = parseValue();
 				collection.add(value);
 
 				skipWhitespace();
@@ -416,6 +434,9 @@ public class Json {
 	                    default -> throw new JsonParsingException("Invalid escape sequence: \\" + esc);
 					}
 				} else {
+					if (c < 0x20)
+					    throw new JsonParsingException(
+					        "Unescaped control character U+" + String.format("%04X", (int) c) + " at position " + (index - 1));
                     sb.append(c);
                 }
 			}
@@ -426,16 +447,22 @@ public class Json {
 		Number parseNumber() {
             int start = index;
             if (peek() == '-') next();
+            if (!isDigit())
+            	throw new JsonParsingException("Invalid character at position " + index + ". Expected a digit");
 
-            while (hasMore() && Character.isDigit(peek())) {
-                next();
-            }
+            if (peek() == '0') {
+            	next();
+            	if (isDigit())
+                	throw new JsonParsingException("Invalid digit at position " + index + ". Numeric values can not have leading zeros");
+            } else while (hasMore() && isDigit()) next();
 
             boolean isFloatingPoint = false;
             if (hasMore() && peek() == '.') {
                 isFloatingPoint = true;
                 next(); // consume '.'
-                while (hasMore() && Character.isDigit(peek())) {
+                if (!isDigit())
+                	throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the decimal point");
+                while (hasMore() && isDigit()) {
                     next();
                 }
             }
@@ -446,7 +473,9 @@ public class Json {
                 if (hasMore() && (peek() == '+' || peek() == '-')) {
                     next();
                 }
-                while (hasMore() && Character.isDigit(peek())) {
+                if (!isDigit())
+                	throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the scientific notation (e/E)");
+                while (hasMore() && isDigit()) {
                     next();
                 }
             }
