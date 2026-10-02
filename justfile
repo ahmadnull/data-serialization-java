@@ -1,5 +1,21 @@
 _default: test-show-only-failed
 
+[group('git')]
+[arg('type', pattern='feat|fix|refactor|perf|style|test|docs|build|ops|chore')]
+[arg('scope', short='s')]
+[arg('breaking', short='B', value='1')]
+[arg('body', short='b')]
+[arg('footer', short='f')]
+commit type description scope='' breaking='0' body='' footer='': clean-whitespace add-all
+    #!/bin/env sh
+    if [ -n "{{scope}}" ]; then scope="({{scope}})"; fi
+    if [ "{{breaking}}" -eq "1" ]; then breaking="!"; fi
+    git commit -m "{{type}}${scope}${breaking}: {{description}}" -m "{{body}}" -m "{{footer}}"
+
+[group('git')]
+add-all:
+    git add -A
+
 build *args:
     ./gradlew build {{args}}
 
