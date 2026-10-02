@@ -2,10 +2,10 @@ _default: test-show-only-failed
 
 [group('git')]
 [arg('type', pattern='feat|fix|refactor|perf|style|test|docs|build|ops|chore')]
-[arg('scope', short='s')]
-[arg('breaking', short='B', value='1')]
-[arg('body', short='b')]
-[arg('footer', short='f')]
+[arg('scope', short='s', long='scope')]
+[arg('breaking', short='B', long='breaking', value='1')]
+[arg('body', short='b', long='body')]
+[arg('footer', short='f', long='footer')]
 commit type description scope='' breaking='0' body='' footer='': format add-all
     #!/bin/env sh
     if [ -n "{{scope}}" ]; then scope="({{scope}})"; fi
