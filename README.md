@@ -1,14 +1,11 @@
 # data-serialization-java
 
 [![WIP](https://img.shields.io/badge/%F0%9F%9B%A0-WIP-cyan)](#)
+[![Latest Version](https://img.shields.io/github/v/tag/ahmadnull/data-serialization-java?label=Latest%20Version&sort=semver)](https://github.com/ahmadnull/data-serialization-java/tags)
 
-Data Serialization Java Library.
+Static Data Serialization Java Library.
 
-# Serialization Support
+# Supported Formats
 
 - JSON
-- TOML (Partially)
-
-# Deserialization Support
-
-_TODO_
+- TOML (In progress)
