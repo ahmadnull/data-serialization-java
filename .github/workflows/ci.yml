@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+
+      # `cache-jdk` stores the downloaded Temurin package in the runner tool
+      # cache, so after the first run the ~200 MB JDK download is skipped.
+      # We intentionally do NOT set `cache`, which would cache the Gradle
+      # dependency cache a second time under setup-java's own key.
+      #
+      # 21 matches `java.toolchain` in lib/build.gradle.kts, so the foojay
+      # resolver never has to provision a JDK mid-build.
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache-jdk: true
+
+      # Caches Gradle itself:
+      #   * the distribution downloaded for `gradle-version`,
+      #   * wrapper distributions under ~/.gradle/wrapper,
+      #   * dependencies and transformed artifacts under ~/.gradle/caches,
+      #   * the local build cache and the configuration cache.
+      # No extra configuration is needed for any of that. Reads are read-only
+      # off the default branch, so pull requests cannot write to the cache.
+      #
+      # `gradlew` and `gradle/wrapper` are gitignored, so a fresh checkout has
+      # no wrapper and `just setup` cannot run without a real `gradle` binary.
+      # Supplying gradle-version is what installs that distribution onto the
+      # PATH; without it the action assumes a wrapper is already present.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.2.1'
+
+      # extractions/setup-just installs via @actions/tool-cache, which lands
+      # the binary under $RUNNER_TOOL_CACHE/just. Restoring that directory
+      # before the setup step lets the action find the tool already present
+      # and skip the release download entirely.
+      - name: Cache just
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.tool_cache }}/just
+          key: just-${{ runner.os }}-${{ hashFiles('justfile') }}
+          restore-keys: |
+            just-${{ runner.os }}-
+
+      - name: Setup just
+        uses: extractions/setup-just@v4
+
+      - name: Setup gradle wrapper
+        run: just setup
+
+      # `just build` runs `./gradlew build`, whose `check` task already runs
+      # `spotlessCheck` and the whole test suite, so there is no separate
+      # `just test` step. Passing -PtestLogEvents=failed keeps the log to the
+      # failures instead of streaming all 321 passing tests.
+      - name: Build and test
+        run: just build -PtestLogEvents=failed
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report-${{ github.run_id }}
+          path: lib/build/reports/tests/test
+          if-no-files-found: ignore
+          retention-days: 7
