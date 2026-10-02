@@ -1,4 +1,4 @@
-_default: (test "-i")
+_default: test
 
 build *args:
     ./gradlew build {{args}}
