@@ -7,7 +7,7 @@ onto the test classpath by `lib/build.gradle.kts`.
 
 ### json/test_parsing
 
-Verbatim copy of [JSONTestSuite](https://github.com/nst/JSONTestSuite) (MIT),
+Verbatim copy of test_parsing from [JSONTestSuite](https://github.com/nst/JSONTestSuite) (MIT) as of commit [1ef36fa](https://github.com/nst/JSONTestSuite/commit/1ef36fa01286573e846ac449e8683f8833c5b26a),
 the compliance suite for [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259)
 parsers, which was published as an appendix to
 [Parsing JSON is a Minefield](http://seriot.ch/parsing_json.php).
