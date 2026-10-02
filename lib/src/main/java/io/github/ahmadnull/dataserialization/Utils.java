@@ -7,7 +7,7 @@ class Utils {
 			result += c;
 		return result;
 	}
-	
+
 	static String repeatSpace(int repeat) {
 		return repeatChar(' ', repeat);
 	}
