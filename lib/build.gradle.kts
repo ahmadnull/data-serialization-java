@@ -38,14 +38,21 @@ tasks.withType<Test> {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 
-    testLogging {
-        // set options for log level LIFECYCLE
-        events = setOf(
+    // ./gradlew test -PtestLogEvents=failed logs nothing but the failures,
+    // any other value keeps the default event set.
+    val testLogEvents = when (providers.gradleProperty("testLogEvents").orNull) {
+        "failed" -> setOf(TestLogEvent.FAILED)
+        else -> setOf(
             TestLogEvent.FAILED,
             TestLogEvent.PASSED,
             TestLogEvent.SKIPPED,
             TestLogEvent.STANDARD_OUT
         )
+    }
+
+    testLogging {
+        // set options for log level LIFECYCLE
+        events = testLogEvents
         exceptionFormat = TestExceptionFormat.FULL
         showExceptions = true
         showCauses = true
