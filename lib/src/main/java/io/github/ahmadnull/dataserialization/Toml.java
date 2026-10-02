@@ -1,6 +1,6 @@
 package io.github.ahmadnull.dataserialization;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -21,7 +21,7 @@ public class Toml {
                 case Double d -> serialized += entry.getKey() + " = " + d.toString();
                 case Boolean b -> serialized += entry.getKey() + " = " + b.toString();
                 case Map h -> serialized += "\n[" + entry.getKey() + ']' + '\n' + serialize(h);
-                case List a -> serialized += entry.getKey() + " = "  + serialize(a);
+                case Collection c -> serialized += entry.getKey() + " = "  + serialize(c);
                 case null -> serialized += "null";
                 default -> System.out.println("Invalid value");
             }
@@ -33,11 +33,11 @@ public class Toml {
     }
 
     /**
-     * Serialize List&lt;Object&gt; into partial TOML String (Not intended for public use)
+     * Serialize Collection&lt;Object&gt; into partial TOML String (Not intended for public use)
      * @param array
      * @return Partial TOML String
      */
-    private static String serialize(List<Object> array) {
+    private static String serialize(Collection<Object> array) {
         String serialized = "[ ";
 
         for (Object item : array) {
@@ -47,7 +47,7 @@ public class Toml {
                 case Double d -> serialized += d.toString();
                 case Boolean b -> serialized += "" + b;
                 //case Map h -> serialized += serialize(h);
-                case List a -> serialized += serialize(a);
+                case Collection c -> serialized += serialize(c);
                 case null -> serialized += "null";
                 default -> System.out.println("Invalid value");
             }
