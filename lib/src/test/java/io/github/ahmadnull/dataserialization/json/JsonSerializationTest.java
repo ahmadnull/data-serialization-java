@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  * Every file name states the outcome a RFC 8259 compliant parser has to produce,
  * therefore each file is reported as an individual test.
  */
-class JsonParsingTest {
+class JsonSerializationTest {
     private static final String SUITE_PATH = "/test_parsing/";
     private static final String EXTENSION = ".json";
 
@@ -110,7 +110,7 @@ class JsonParsingTest {
     }
 
     private static Path suiteDirectory() {
-        URL url = JsonParsingTest.class.getResource(SUITE_PATH);
+        URL url = JsonSerializationTest.class.getResource(SUITE_PATH);
         if (url == null)
             throw new IllegalStateException(
                 "The test suites are not on the test classpath, run the tests with ./gradlew test");
