@@ -1,4 +1,4 @@
-package io.github.ahmadnull.dataserialization;
+package io.github.ahmadnull.dataserialization.toml;
 
 import org.junit.jupiter.api.Test;
 

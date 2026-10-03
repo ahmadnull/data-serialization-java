@@ -24,9 +24,13 @@ dependencies {
 sourceSets {
     // The shared conformance corpora live in the repository root, outside of any
     // module, and are copied onto the test classpath so the tests can list and
-    // read them as resources.
+    // read them as resources. Every format registers its own directory here, the
+    // suites must not be nested into one another to keep the corpus paths flat.
     named("test") {
-        resources.srcDir(rootProject.file("test_suites/json"))
+        resources.srcDirs(
+            rootProject.file("test_suites/json"),
+            // rootProject.file("test_suites/toml"),
+        )
     }
 }
 
@@ -49,6 +53,11 @@ java {
 tasks.withType<Test> {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+
+    // The module descriptor is asserted from ModuleApiSurfaceTest, which reads
+    // module-info.class off the test classpath. The tests deliberately stay on
+    // the classpath: inferModulePath only takes effect when the main runtime is
+    // a jar, while the test task consumes the class directory.
 
     // ./gradlew test -PtestLogEvents=failed logs nothing but the failures,
     // any other value keeps the default event set.

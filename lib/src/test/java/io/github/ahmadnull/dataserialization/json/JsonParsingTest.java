@@ -1,4 +1,4 @@
-package io.github.ahmadnull.dataserialization;
+package io.github.ahmadnull.dataserialization.json;
 
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  * Every file name states the outcome a RFC 8259 compliant parser has to produce,
  * therefore each file is reported as an individual test.
  */
-class JsonTestParsing {
+class JsonParsingTest {
     private static final String SUITE_PATH = "/test_parsing/";
     private static final String EXTENSION = ".json";
 
@@ -42,7 +42,7 @@ class JsonTestParsing {
     @TestFactory Stream<DynamicNode> mustReject() {
         return suiteFiles("n_").stream()
             .map(name -> dynamicTest(name, () -> assertThrows(
-                Json.JsonParsingException.class,
+                JsonParsingException.class,
                 () -> Json.deserialize(content(name)),
                 name + " must be rejected with a JsonParsingException"
             )));
@@ -76,7 +76,7 @@ class JsonTestParsing {
         try {
             Json.deserialize(raw);
             return true;
-        } catch (Json.JsonParsingException e) {
+        } catch (JsonParsingException e) {
             return false;
         }
     }
@@ -110,7 +110,7 @@ class JsonTestParsing {
     }
 
     private static Path suiteDirectory() {
-        URL url = JsonTestParsing.class.getResource(SUITE_PATH);
+        URL url = JsonParsingTest.class.getResource(SUITE_PATH);
         if (url == null)
             throw new IllegalStateException(
                 "The test suites are not on the test classpath, run the tests with ./gradlew test");

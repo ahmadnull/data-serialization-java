@@ -1,4 +1,4 @@
-package io.github.ahmadnull.dataserialization;
+package io.github.ahmadnull.dataserialization.toml;
 
 import java.util.Collection;
 import java.util.Map;

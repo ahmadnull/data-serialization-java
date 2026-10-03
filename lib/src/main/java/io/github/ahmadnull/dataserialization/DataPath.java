@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class DataPath {
 
-    public enum Seperator {
+    public enum Separator {
         Dot {
             public String toString() {
                 return squareBracketsRegex + Pattern.quote(".") + ']';
@@ -24,22 +24,22 @@ public class DataPath {
     }
 
     public static Object getByPath(Map<String, Object> map, String path) {
-        return getByPath(map, DataPath.Seperator.Dot, path);
+        return getByPath(map, DataPath.Separator.Dot, path);
     }
 
-    public static Object getByPath(Map<String, Object> map, DataPath.Seperator seperator, String path) {
-        String seperatorRegex = seperator.toString();
+    public static Object getByPath(Map<String, Object> map, DataPath.Separator separator, String path) {
+        String separatorRegex = separator.toString();
 
-        String[] splittedPath = path.split(seperatorRegex);
+        String[] splittedPath = path.split(separatorRegex);
 
-        return getByPath(map, seperator, splittedPath);
+        return getByPath(map, separator, splittedPath);
     }
 
     public static Object getByPath(Map<String, Object> map, String... path) {
-        return getByPath(map, DataPath.Seperator.Dot, path);
+        return getByPath(map, DataPath.Separator.Dot, path);
     }
 
-    public static Object getByPath(Map<String, Object> map, DataPath.Seperator seperator, String... path) {
+    public static Object getByPath(Map<String, Object> map, DataPath.Separator separator, String... path) {
         Object node = map.get(path[0]);
 
         int length = path.length;
@@ -56,22 +56,22 @@ public class DataPath {
     }
 
     public static Object getByPath(List<Object> list, String path) {
-        return getByPath(list, DataPath.Seperator.Dot, path);
+        return getByPath(list, DataPath.Separator.Dot, path);
     }
 
-    public static Object getByPath(List<Object> list, DataPath.Seperator seperator, String path) {
-        String seperatorRegex = seperator.toString();
+    public static Object getByPath(List<Object> list, DataPath.Separator separator, String path) {
+        String separatorRegex = separator.toString();
 
-        String[] splittedPath = path.split(seperatorRegex);
+        String[] splittedPath = path.split(separatorRegex);
 
-        return getByPath(list, seperator, splittedPath);
+        return getByPath(list, separator, splittedPath);
     }
 
     public static Object getByPath(List<Object> list, String... path) {
-        return getByPath(list, DataPath.Seperator.Dot, path);
+        return getByPath(list, DataPath.Separator.Dot, path);
     }
 
-    public static Object getByPath(List<Object> list, DataPath.Seperator seperator, String... path) {
+    public static Object getByPath(List<Object> list, DataPath.Separator separator, String... path) {
         Object node = list.get(Integer.parseInt(path[0]));
 
         int length = path.length;

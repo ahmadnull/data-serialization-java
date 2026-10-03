@@ -28,8 +28,9 @@ test-show-only-failed: (test "test" "-PtestLogEvents=failed")
 
 [group('chore')]
 clean-whitespace:
-    sed 's/[ \t]*$//' lib/src/main/java/io/github/ahmadnull/dataserialization/* -i
-    sed 's/[ \t]*$//' lib/src/test/java/io/github/ahmadnull/dataserialization/* -i
+    # Recursive, the package directories contain sub packages since the library
+    # was split per format. `just format` already covers this via spotless.
+    find lib/src -name '*.java' -exec sed -i 's/[ \t]*$//' {} +
 
 [group('chore')]
 format:
