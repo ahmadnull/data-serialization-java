@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
-class Parser {
+class Deserializer {
     final String src;
     final int maxDepth;
     final Supplier<Map<String, Object>> mapFactory;
@@ -12,7 +12,7 @@ class Parser {
     int index = 0;
     int depth = 0;
 
-    Parser(String src, JsonSettings settings) {
+    Deserializer(String src, JsonSettings settings) {
         this.src = src;
         this.maxDepth = settings.maxDepth();
         this.mapFactory = settings.mapFactory();
@@ -45,30 +45,30 @@ class Parser {
         while(hasMore() && isJsonWhitespace()) index++;
     }
 
-    Object parseValue() {
+    Object deserializeValue() {
         skipWhitespace();
-        if (!hasMore()) throw new JsonParsingException("Unexpected end of Input");
+        if (!hasMore()) throw new JsonDeserializationException("Unexpected end of Input");
 
         char c = peek();
         if (depth >= maxDepth)
-            throw new JsonParsingException("Maximum nesting depth of " + maxDepth + " exceeded at position " + index);
+            throw new JsonDeserializationException("Maximum nesting depth of " + maxDepth + " exceeded at position " + index);
         try {
             depth++;
             return switch (c) {
-                case '{' -> parseObject();
-                case '[' -> parseArray();
-                case '"' -> parseString();
-                case 't', 'f' -> parseBoolean();
-                case 'n' -> parseNull();
-                case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> parseNumber();
-                default -> throw new JsonParsingException("Unexpected character '" + c + "' at position " + index);
+                case '{' -> deserializeObject();
+                case '[' -> deserializeArray();
+                case '"' -> deserializeString();
+                case 't', 'f' -> deserializeBoolean();
+                case 'n' -> deserializeNull();
+                case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> deserializeNumber();
+                default -> throw new JsonDeserializationException("Unexpected character '" + c + "' at position " + index);
             };
         } finally {
             depth--;
         }
     }
 
-    Map<String, Object> parseObject() {
+    Map<String, Object> deserializeObject() {
         Map<String, Object> map = mapFactory.get();
         next(); // consume '{'
         skipWhitespace();
@@ -81,16 +81,16 @@ class Parser {
         while(hasMore()) {
             skipWhitespace();
             if (peek() != '"')
-                throw new JsonParsingException("Expected string key in object at position " + index);
+                throw new JsonDeserializationException("Expected string key in object at position " + index);
 
-            String key = parseString();
+            String key = deserializeString();
             skipWhitespace();
 
             if (peek() != ':')
-                throw new JsonParsingException("Expected ':' after key at position " + index);
+                throw new JsonDeserializationException("Expected ':' after key at position " + index);
             next(); // consume ':'
 
-            Object value = parseValue();
+            Object value = deserializeValue();
             map.put(key, value);
 
             skipWhitespace();
@@ -100,13 +100,13 @@ class Parser {
                 return map;
             } else if (c == ',') {
                 next(); // consume ','
-            } else throw new JsonParsingException("Expected ',' or '}' in object at position " + index);
+            } else throw new JsonDeserializationException("Expected ',' or '}' in object at position " + index);
         }
 
-        throw new JsonParsingException("Unterminated object starting at position " + index);
+        throw new JsonDeserializationException("Unterminated object starting at position " + index);
     }
 
-    Collection<Object> parseArray() {
+    Collection<Object> deserializeArray() {
         Collection<Object> collection = collectionFactory.get();
         next(); // consume '['
         skipWhitespace();
@@ -117,7 +117,7 @@ class Parser {
         }
 
         while(hasMore()) {
-            Object value = parseValue();
+            Object value = deserializeValue();
             collection.add(value);
 
             skipWhitespace();
@@ -127,13 +127,13 @@ class Parser {
                 return collection;
             } else if (c == ',') {
                 next(); // consume ','
-            } else throw new JsonParsingException("Expected ',' or ']' in array at position " + index);
+            } else throw new JsonDeserializationException("Expected ',' or ']' in array at position " + index);
         }
 
-        throw new JsonParsingException("Unterminated array starting at position " + index);
+        throw new JsonDeserializationException("Unterminated array starting at position " + index);
     }
 
-    String parseString() {
+    String deserializeString() {
         next(); // consume opening quote '"'
         StringBuilder sb = new StringBuilder();
 
@@ -144,7 +144,7 @@ class Parser {
 
             if (c == '\\') {
                 if (!hasMore())
-                    throw new JsonParsingException("Unterminated escape sequence in string");
+                    throw new JsonDeserializationException("Unterminated escape sequence in string");
 
                 char esc = next();
                 switch (esc) {
@@ -158,39 +158,39 @@ class Parser {
                     case 't' -> sb.append('\t');
                     case 'u' -> {
                         if (index + 4 > src.length()) {
-                            throw new JsonParsingException("Invalid unicode escape sequence");
+                            throw new JsonDeserializationException("Invalid unicode escape sequence");
                         }
                         String hex = src.substring(index, index + 4);
                         index += 4;
                         try {
                             sb.append((char) Integer.parseInt(hex, 16));
                         } catch (NumberFormatException e) {
-                            throw new JsonParsingException("Invalid hex in unicode sequence: \\u" + hex);
+                            throw new JsonDeserializationException("Invalid hex in unicode sequence: \\u" + hex);
                         }
                     }
-                    default -> throw new JsonParsingException("Invalid escape sequence: \\" + esc);
+                    default -> throw new JsonDeserializationException("Invalid escape sequence: \\" + esc);
                 }
             } else {
                 if (c < 0x20)
-                    throw new JsonParsingException(
+                    throw new JsonDeserializationException(
                         "Unescaped control character U+" + String.format("%04X", (int) c) + " at position " + (index - 1));
                 sb.append(c);
             }
         }
 
-        throw new JsonParsingException("Unterminated string literal");
+        throw new JsonDeserializationException("Unterminated string literal");
     }
 
-    Number parseNumber() {
+    Number deserializeNumber() {
         int start = index;
         if (peek() == '-') next();
         if (!isDigit())
-            throw new JsonParsingException("Invalid character at position " + index + ". Expected a digit");
+            throw new JsonDeserializationException("Invalid character at position " + index + ". Expected a digit");
 
         if (peek() == '0') {
             next();
             if (isDigit())
-                throw new JsonParsingException("Invalid digit at position " + index + ". Numeric values can not have leading zeros");
+                throw new JsonDeserializationException("Invalid digit at position " + index + ". Numeric values can not have leading zeros");
         } else while (hasMore() && isDigit()) next();
 
         boolean isFloatingPoint = false;
@@ -198,7 +198,7 @@ class Parser {
             isFloatingPoint = true;
             next(); // consume '.'
             if (!isDigit())
-                throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the decimal point");
+                throw new JsonDeserializationException("Invalid character at position " + index + ". Expected at least one digit after the decimal point");
             while (hasMore() && isDigit()) {
                 next();
             }
@@ -211,7 +211,7 @@ class Parser {
                 next();
             }
             if (!isDigit())
-                throw new JsonParsingException("Invalid character at position " + index + ". Expected at least one digit after the scientific notation (e/E)");
+                throw new JsonDeserializationException("Invalid character at position " + index + ". Expected at least one digit after the scientific notation (e/E)");
             while (hasMore() && isDigit()) {
                 next();
             }
@@ -229,11 +229,11 @@ class Parser {
                 return val;
             }
         } catch (NumberFormatException e) {
-            throw new JsonParsingException("Invalid numeric value: " + numStr);
+            throw new JsonDeserializationException("Invalid numeric value: " + numStr);
         }
     }
 
-    Boolean parseBoolean() {
+    Boolean deserializeBoolean() {
         if (src.startsWith("true", index)) {
             index += 4;
             return true;
@@ -241,14 +241,14 @@ class Parser {
             index += 5;
             return false;
         }
-        throw new JsonParsingException("Invalid boolean at position " + index);
+        throw new JsonDeserializationException("Invalid boolean at position " + index);
     }
 
-    Object parseNull() {
+    Object deserializeNull() {
         if (src.startsWith("null", index)) {
             index += 4;
             return null;
         }
-        throw new JsonParsingException("Invalid null token at position " + index);
+        throw new JsonDeserializationException("Invalid null token at position " + index);
     }
 }

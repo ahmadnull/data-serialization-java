@@ -42,9 +42,9 @@ class JsonParsingTest {
     @TestFactory Stream<DynamicNode> mustReject() {
         return suiteFiles("n_").stream()
             .map(name -> dynamicTest(name, () -> assertThrows(
-                JsonParsingException.class,
+                JsonDeserializationException.class,
                 () -> Json.deserialize(content(name)),
-                name + " must be rejected with a JsonParsingException"
+                name + " must be rejected with a JsonDeserializationException"
             )));
     }
 
@@ -76,7 +76,7 @@ class JsonParsingTest {
         try {
             Json.deserialize(raw);
             return true;
-        } catch (JsonParsingException e) {
+        } catch (JsonDeserializationException e) {
             return false;
         }
     }

@@ -141,16 +141,16 @@ class JsonObjectBindingTest {
     }
 
     @Test void rejectsANonObjectRoot() {
-        JsonParsingException e = assertThrows(
-            JsonParsingException.class,
+        JsonDeserializationException e = assertThrows(
+            JsonDeserializationException.class,
             () -> Json.deserializeObject("[1, 2]", Point.class));
 
         assertEquals("Expected JSON Object root for class deserialization", e.getMessage());
     }
 
     @Test void rejectsAClassWithoutANoArgConstructor() {
-        JsonParsingException e = assertThrows(
-            JsonParsingException.class,
+        JsonDeserializationException e = assertThrows(
+            JsonDeserializationException.class,
             () -> Json.deserializeObject("{\"value\": 1}", NoDefaultConstructor.class));
 
         assertEquals("Failed to bind JSON Object to " + NoDefaultConstructor.class.getName(), e.getMessage());
@@ -161,8 +161,8 @@ class JsonObjectBindingTest {
 
     /** A primitive field cannot hold null, the binder must not swallow that. */
     @Test void rejectsNullForAPrimitiveField() {
-        JsonParsingException e = assertThrows(
-            JsonParsingException.class,
+        JsonDeserializationException e = assertThrows(
+            JsonDeserializationException.class,
             () -> Json.deserializeObject("{\"x\": null}", Point.class));
 
         assertTrue(
