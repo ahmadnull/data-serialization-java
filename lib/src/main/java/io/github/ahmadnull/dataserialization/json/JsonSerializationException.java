@@ -8,7 +8,7 @@ public class JsonSerializationException extends RuntimeException {
     }
 
     public JsonSerializationException(Object value) {
-        super(value.toString() + ": is not a valid JSON value\n" +
-            "Valid JSON values are: String, Integer, Double, Boolean, Map, Collection, and null.");
+        super(value.toString() + ": is not a valid TOML value\n" +
+            "Valid TOML values are: String, Integer, Double, Boolean, Map, Collection, and null.");
     }
 }

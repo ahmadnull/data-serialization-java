@@ -1,79 +1,38 @@
 package io.github.ahmadnull.dataserialization.toml;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.function.Supplier;
+import io.github.ahmadnull.dataserialization.internal.ObjectBinder;
+import io.github.ahmadnull.dataserialization.internal.ObjectBinder.BindingException;
 
 public class Toml {
+    // --- Serialization ---
 
-    /**
-     * Serialize Map&lt;String, Object&gt; into TOML String
-     * @param data
-     * @return TOML String
-     */
+    public static <T> String serializeObject(T object) {
+        TomlSettings settings = new TomlSettings();
+        return serializeObject(object, settings);
+    }
+
+    public static <T> String serializeObject(T object, TomlSettings settings) {
+        Map<String, Object> map;
+        try {
+            map = ObjectBinder.toMap(object);
+        } catch (BindingException e) {
+            throw new IllegalStateException(
+                "Failed to read the fields of " + object.getClass().getName(), e);
+        }
+
+        return serialize(map, settings);
+    }
+
     public static String serialize(Map<String, Object> data) {
-        String serialized = "";
-
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            switch(entry.getValue()) {
-                case String s -> serialized += entry.getKey() + " = " + '"' + s + '"';
-                case Integer i -> serialized += entry.getKey() + " = " + i.toString();
-                case Double d -> serialized += entry.getKey() + " = " + d.toString();
-                case Boolean b -> serialized += entry.getKey() + " = " + b.toString();
-                case Map h -> serialized += "\n[" + entry.getKey() + ']' + '\n' + serialize(h);
-                case Collection c -> serialized += entry.getKey() + " = "  + serialize(c);
-                case null -> serialized += "null";
-                default -> System.out.println("Invalid value");
-            }
-
-            serialized += '\n';
-        }
-
-        return serialized;
+        TomlSettings settings = new TomlSettings();
+        return serialize(data, settings);
     }
 
-    /**
-     * Serialize Collection&lt;Object&gt; into partial TOML String (Not intended for public use)
-     * @param array
-     * @return Partial TOML String
-     */
-    private static String serialize(Collection<Object> array) {
-        String serialized = "[ ";
-
-        for (Object item : array) {
-            switch(item) {
-                case String s -> serialized += '"' + s + '"';
-                case Integer i -> serialized += i.toString();
-                case Double d -> serialized += d.toString();
-                case Boolean b -> serialized += "" + b;
-                //case Map h -> serialized += serialize(h);
-                case Collection c -> serialized += serialize(c);
-                case null -> serialized += "null";
-                default -> System.out.println("Invalid value");
-            }
-
-            serialized += ", ";
-        }
-
-        // Remove the trailing comma ','
-        int trailing = 2;
-        serialized = serialized.substring(0, serialized.length() - trailing);
-
-        serialized += " ]";
-
-        return serialized;
+    public static String serialize(Map<String, Object> data, TomlSettings settings) {
+        Serializer serializer = new Serializer(settings);
+        serializer.serializeRoot(data);
+        return serializer.getSerializedString();
     }
 
-    /**
-     * Deserialize raw TOML String into Map&lt;String, Object&gt;
-     * @param <T>
-     * @param raw
-     * @param mapFactory
-     * @return Map&lt;String, Object&gt;
-     */
-    public static <T extends Map<String, Object>> T deserialize(String raw, Supplier<T> mapFactory) {
-        // TODO
-        T data = mapFactory.get();
-        return data;
-    }
 }

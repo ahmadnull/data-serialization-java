@@ -30,7 +30,7 @@ class Serializer {
                 throw new JsonSerializationException("Maximum nesting depth of " + maxDepth + " exceeded");
 
             switch(data) {
-                case String s -> sb.append('"').append(Helpers.escapeJson(s)).append('"');
+                case String s -> sb.append('"').append(Helpers.escapeString(s)).append('"');
                 case Number n -> sb.append(n);
                 case Boolean b -> sb.append(b);
                 case Map m -> serializeMap(m);
@@ -54,7 +54,7 @@ class Serializer {
                 if (multiline) sb.append('\n').append(" ".repeat(indentation * level));
                 else if (!first) sb.append(' ');
 
-                sb.append('"').append(Helpers.escapeJson(String.valueOf(entry.getKey()))).append("\": ");
+                sb.append('"').append(Helpers.escapeString(String.valueOf(entry.getKey()))).append("\": ");
                 level++;
                 serializeValue(entry.getValue());
                 level--;

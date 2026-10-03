@@ -1,7 +1,7 @@
 package io.github.ahmadnull.dataserialization.json;
 
 final class Helpers {
-    static String escapeJson(String input) {
+    static String escapeString(String input) {
         if (input == null) return "";
         StringBuilder sb = new StringBuilder();
         for (char c : input.toCharArray()) {
